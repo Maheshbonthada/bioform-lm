@@ -1,0 +1,93 @@
+{
+  "model_id": "Maheshbonthada/bioform-lm",
+  "model_name": "BioForm-LM",
+  "description": "Generative design of biologics formulations via in-context learning and physics-informed decoding",
+  "license": "mit",
+  "tags": [
+    "drug-discovery",
+    "biologics",
+    "formulation-design",
+    "generative-model",
+    "in-context-learning",
+    "transformers",
+    "few-shot-learning",
+    "mechanistic-simulator"
+  ],
+  "datasets": [
+    "Maheshbonthada/BioFormBench"
+  ],
+  "architecture": {
+    "type": "decoder-only-transformer",
+    "vocab_size": 199,
+    "hidden_size": 256,
+    "num_layers": 6,
+    "num_heads": 8,
+    "intermediate_size": 1024,
+    "max_position_embeddings": 64,
+    "dropout": 0.1
+  },
+  "training": {
+    "framework": "PyTorch",
+    "optimizer": "Adam",
+    "learning_rate": 1e-4,
+    "batch_size": 32,
+    "epochs": 15,
+    "loss": "CrossEntropyLoss",
+    "hardware": "2x RTX 3050 (8GB VRAM each)",
+    "training_time_hours": 4
+  },
+  "evaluation": {
+    "protocol": "Leave-one-protein-out (LOPO) cross-validation",
+    "dataset": "BioFormBench",
+    "metrics": {
+      "recall_at_10": 0.167,
+      "diversity_mpd": 0.404,
+      "calibration_spearman_r": 0.267,
+      "coverage_percent": 35.3
+    },
+    "per_protein_results": {
+      "protein_1_igg": {
+        "recall_at_10": 0.50,
+        "calibration_r": -0.60,
+        "regime": "exploratory"
+      },
+      "protein_2_scfv": {
+        "recall_at_10": 0.0,
+        "calibration_r": 1.0,
+        "calibration_p_value": 0.0,
+        "regime": "perfect"
+      },
+      "protein_3_fab": {
+        "recall_at_10": 0.0,
+        "calibration_r": 0.40,
+        "regime": "moderate"
+      }
+    }
+  },
+  "intended_use": {
+    "primary": "Generate de novo biologics formulations for novel proteins",
+    "input": "Protein descriptors (MW, pI, Tm) + 3-10 real stability measurements",
+    "output": "50 candidate formulation recipes ranked by predicted stability",
+    "validation": "Computational hypotheses for wet-lab screening (not clinical deployment)"
+  },
+  "limitations": [
+    "Evaluation on 18 formulations (3 proteins) - scaling to 200+ planned",
+    "DLVO + Lumry-Eyring physics - simplified model, not full molecular dynamics",
+    "No wet-lab validation - computational predictions only",
+    "Only 3/5 collected proteins had sufficient in-context examples"
+  ],
+  "author": {
+    "name": "Bonthada Sravan Kumar",
+    "email": "support@anything.online",
+    "affiliation": "Independent Researcher, Genes Project"
+  },
+  "links": {
+    "github": "https://github.com/Maheshbonthada/bioform-lm",
+    "preprint": "https://www.researchsquare.com",
+    "dataset": "https://huggingface.co/datasets/Maheshbonthada/BioFormBench"
+  },
+  "citations": {
+    "paper": "@article{kumar2026bioformlm, title={BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding}, author={Kumar, Bonthada Sravan}, journal={Research Square}, year={2026}}",
+    "dataset": "@dataset{kumar2026bioformbench, title={BioFormBench: Benchmark for Generative Biologics Formulation Design}, author={Kumar, Bonthada Sravan}, year={2026}}"
+  }
+}
