@@ -1,0 +1,77 @@
+═══════════════════════════════════════════════════════════════════════════════
+AUTHOR INFORMATION - RESEARCH SQUARE SUBMISSION
+═══════════════════════════════════════════════════════════════════════════════
+
+PRIMARY/CORRESPONDING AUTHOR:
+───────────────────────────────────────────────────────────────────────────────
+Full Name: Bonthada Sravan Kumar
+Affiliation: Independent Researcher, Genes Project
+Email: support@anything.online
+Phone: [Optional]
+ORCID: [Optional - provide if available]
+
+TITLE: BioForm-LM: Generative Design of Biologics Formulations via In-Context
+       Learning and Physics-Informed Decoding
+
+ARTICLE TYPE: Research Article / Preprint
+
+═══════════════════════════════════════════════════════════════════════════════
+KEYWORDS (Copy-paste into Research Square keywords field)
+═══════════════════════════════════════════════════════════════════════════════
+
+generative design, biologics formulations, in-context learning, mechanistic
+simulation, few-shot adaptation, extreme data scarcity
+
+═══════════════════════════════════════════════════════════════════════════════
+RESEARCH AREA (Select appropriate)
+═══════════════════════════════════════════════════════════════════════════════
+
+Primary: Bioinformatics / Computational Biology
+Secondary: Machine Learning
+Tertiary: Drug Discovery
+
+═══════════════════════════════════════════════════════════════════════════════
+COMPETING INTERESTS
+═══════════════════════════════════════════════════════════════════════════════
+
+No competing interests
+(Select this option - check box in form)
+
+═══════════════════════════════════════════════════════════════════════════════
+FUNDING STATEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Funding: This research received no specific grant from any funding agency in
+the public, commercial, or not-for-profit sectors.
+
+═══════════════════════════════════════════════════════════════════════════════
+AUTHOR CONTRIBUTION (Optional but recommended)
+═══════════════════════════════════════════════════════════════════════════════
+
+Bonthada Sravan Kumar: Conceptualization, methodology, software implementation,
+data curation, analysis, writing and editing.
+
+═══════════════════════════════════════════════════════════════════════════════
+ACKNOWLEDGMENTS (Optional)
+═══════════════════════════════════════════════════════════════════════════════
+
+We thank the open-access literature for providing formulation data that enabled
+BioFormBench curation. We acknowledge the broader machine learning and drug
+discovery communities for prior work in sim-to-real transfer and generative
+design.
+
+═══════════════════════════════════════════════════════════════════════════════
+DATA AVAILABILITY
+═══════════════════════════════════════════════════════════════════════════════
+
+BioFormBench (67 formulations) and mechanistic simulator code will be made
+available on GitHub upon publication.
+
+═══════════════════════════════════════════════════════════════════════════════
+ETHICAL STATEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+This computational research does not involve human subjects, animals, or
+sensitive personal data. No ethical approval required.
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,27 @@
+═══════════════════════════════════════════════════════════════════════════════
+COVER STATEMENT FOR RESEARCH SQUARE PREPRINT
+(Optional but recommended - explains your preprint intent)
+═══════════════════════════════════════════════════════════════════════════════
+
+This manuscript presents BioForm-LM, a novel generative AI system for biologics
+formulation design. We are posting this preprint to establish priority for our
+work and enable immediate community feedback, while the manuscript undergoes
+peer review at Bioinformatics (Oxford University Press).
+
+Key contributions:
+• First generative model for de novo biologics formulation design
+• Novel three-stage architecture combining mechanistic simulation + in-context
+  learning + physics-informed decoding
+• BioFormBench: curated open benchmark of 67 real biologics formulations
+• Demonstrated perfect calibration and 35.3% coverage on leave-one-protein-out
+  evaluation with only 3-10 in-context examples
+
+This preprint is simultaneously under consideration at Bioinformatics journal,
+a peer-reviewed venue. Preprint publication does not preclude journal
+publication - it aligns with modern scientific practice in computational
+biology and machine learning.
+
+Generated recipes are computational hypotheses for wet-lab screening and should
+not be construed as clinical or commercial recommendations.
+
+═══════════════════════════════════════════════════════════════════════════════

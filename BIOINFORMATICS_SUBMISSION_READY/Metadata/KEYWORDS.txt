@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════════════════════════
+KEYWORDS FOR SCHOLARONE SUBMISSION
+(Copy entire line and paste into keywords field)
+═══════════════════════════════════════════════════════════════════════════════
+
+generative design, biologics formulations, in-context learning, mechanistic
+simulation, few-shot adaptation, extreme data scarcity
+
+═══════════════════════════════════════════════════════════════════════════════
+BREAKDOWN (if entering separately):
+═══════════════════════════════════════════════════════════════════════════════
+
+Keyword 1: generative design
+Keyword 2: biologics formulations
+Keyword 3: in-context learning
+Keyword 4: mechanistic simulation
+Keyword 5: few-shot adaptation
+Keyword 6: extreme data scarcity
+
+═══════════════════════════════════════════════════════════════════════════════
+WHY THESE KEYWORDS:
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Generative design - Core contribution (generative vs predictive)
+✓ Biologics formulations - Application domain (formulation chemistry)
+✓ In-context learning - Key ML technique (few-shot learning)
+✓ Mechanistic simulation - Novel component (DLVO + Lumry-Eyring)
+✓ Few-shot adaptation - Key capability (3-10 examples)
+✓ Extreme data scarcity - Problem statement (why this matters)
+
+These keywords will help researchers in computational drug discovery, machine
+learning, and bioinformatics find your work.
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,97 @@
+═══════════════════════════════════════════════════════════════════════════════
+AUTHOR INFORMATION - FILL IN SCHOLARONE FORM
+═══════════════════════════════════════════════════════════════════════════════
+
+PRIMARY/CORRESPONDING AUTHOR:
+───────────────────────────────────────────────────────────────────────────────
+Full Name: Bonthada Sravan Kumar
+Affiliation: Independent Researcher, Genes Project
+Email: support@anything.online
+Phone: [Optional]
+ORCID: [Optional - provide if available]
+Website: [Optional]
+
+TITLE: BioForm-LM: Generative Design of Biologics Formulations via In-Context
+       Learning and Physics-Informed Decoding
+
+ARTICLE TYPE: Research Article
+
+═══════════════════════════════════════════════════════════════════════════════
+KEYWORDS (Copy-paste into ScholarOne keywords field)
+═══════════════════════════════════════════════════════════════════════════════
+
+generative design, biologics formulations, in-context learning, mechanistic
+simulation, few-shot adaptation, extreme data scarcity
+
+═══════════════════════════════════════════════════════════════════════════════
+RESEARCH AREA (Select appropriate)
+═══════════════════════════════════════════════════════════════════════════════
+
+Primary: Bioinformatics
+Secondary: Machine Learning for Drug Discovery
+Tertiary: Computational Drug Development
+
+═══════════════════════════════════════════════════════════════════════════════
+COMPETING INTERESTS
+═══════════════════════════════════════════════════════════════════════════════
+
+□ No competing interests
+  (Select this option - check box in form)
+
+═══════════════════════════════════════════════════════════════════════════════
+FUNDING STATEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Funding: This research received no specific grant from any funding agency in
+the public, commercial, or not-for-profit sectors.
+
+═══════════════════════════════════════════════════════════════════════════════
+AUTHOR CONTRIBUTION (Optional but recommended)
+═══════════════════════════════════════════════════════════════════════════════
+
+Bonthada Sravan Kumar: Conceptualization, methodology, software implementation,
+data curation, analysis, writing and editing.
+
+═══════════════════════════════════════════════════════════════════════════════
+ACKNOWLEDGMENTS (Optional)
+═══════════════════════════════════════════════════════════════════════════════
+
+We thank the open-access literature for providing formulation data that enabled
+BioFormBench curation. We acknowledge the broader machine learning and drug
+discovery communities for prior work in sim-to-real transfer and generative
+design.
+
+═══════════════════════════════════════════════════════════════════════════════
+SUGGESTED REVIEWERS (Optional - helps editorial process)
+═══════════════════════════════════════════════════════════════════════════════
+
+Reviewer Type 1: Formulation Science Expert
+  - Research focus: DLVO theory, colloidal stability, excipient screening
+  - Recommendation: Select 1-2 experts in protein formulation stability
+  - Why: Can validate mechanistic simulator assumptions and experimental relevance
+
+Reviewer Type 2: Generative ML Researcher
+  - Research focus: In-context learning, transformer models, few-shot adaptation
+  - Recommendation: Select 1-2 experts in generative model design
+  - Why: Can evaluate architectural novelty and comparison to baselines
+
+Reviewer Type 3: Bioinformatics Methodologist
+  - Research focus: Sim-to-real transfer, computational drug design, benchmarking
+  - Recommendation: Select 1-2 experts in computational biology methods
+  - Why: Can assess evaluation rigor and methodological soundness
+
+═══════════════════════════════════════════════════════════════════════════════
+DATA AVAILABILITY
+═══════════════════════════════════════════════════════════════════════════════
+
+BioFormBench (67 formulations) and mechanistic simulator code will be made
+available on GitHub (link provided upon acceptance).
+
+═══════════════════════════════════════════════════════════════════════════════
+ETHICAL STATEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+This computational research does not involve human subjects, animals, or
+sensitive personal data. No ethical approval required.
+
+═══════════════════════════════════════════════════════════════════════════════

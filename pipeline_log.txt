@@ -1,0 +1,68 @@
+﻿python : 2026-08-26 15:31:08,840 - __main__ - INFO - Pipeline output directory: evaluation\full_pipeline
+At line:1 char:408
++ ... lyContinue; python scripts/run_full_pipeline.py --output_dir evaluati ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-08-26 15:3...n\full_pipeline:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-08-26 15:31:08,855 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:08,855 - __main__ - INFO - BIOFORM-LM: COMPLETE PIPELINE EXECUTION
+2026-08-26 15:31:08,855 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:08,855 - __main__ - INFO - Timestamp: 20260826_153108
+2026-08-26 15:31:08,855 - __main__ - INFO - Samples: 100000, Epochs: 30
+2026-08-26 15:31:08,855 - __main__ - INFO - Device: cuda
+2026-08-26 15:31:08,855 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:08,855 - __main__ - INFO - STAGE 1: Verify BioFormBench Dataset
+2026-08-26 15:31:08,855 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:09,141 - __main__ - INFO - ✓ BioFormBench verified
+2026-08-26 15:31:09,142 - __main__ - INFO -   - Samples: 18
+2026-08-26 15:31:09,142 - __main__ - INFO -   - Proteins: 5
+2026-08-26 15:31:09,142 - __main__ - INFO -   - Columns: ['protein_id', 'protein_mw_kda', 'protein_pi', 
+'protein_tm_baseline_c', 'buffer_species', 'buffer_conc_mm', 'ph', 'ionic_strength_mm', 'osmolarity_mosm_kg', 
+'stabilizers_json', 'temperature_c', 'stability_score', 'measured_aggregation_percent', 'measured_tm_shift_c']
+2026-08-26 15:31:09,142 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:09,142 - __main__ - INFO - STAGE 2: Generate Synthetic Training Data
+2026-08-26 15:31:09,142 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:09,142 - __main__ - INFO - Generating 100000 synthetic samples...
+Exception in thread Thread-2 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 1515, in _readerthread
+    buffer.append(fh.read())
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 914: character maps to <undefined>
+2026-08-26 15:31:21,502 - __main__ - INFO - ✓ Synthetic data generation completed
+2026-08-26 15:31:21,502 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:21,502 - __main__ - INFO - STAGE 3: Train BioFormLM Baseline
+2026-08-26 15:31:21,502 - __main__ - INFO - 
+================================================================================
+2026-08-26 15:31:21,502 - __main__ - INFO - Training baseline BioFormLM...
+Exception in thread Thread-4 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 1515, in _readerthread
+    buffer.append(fh.read())
+  File "C:\Users\Sravan\AppData\Local\Programs\Python\Python310\lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 1525: character maps to <undefined>
+2026-08-26 16:31:21,586 - __main__ - ERROR - ❌ Error training baseline: Command '['python', 'scripts/train.py', 
+'--phase', 'synthetic', '--num_samples', '150000', '--output_dir', 'evaluation\\full_pipeline\\checkpoints\\baseline', 
+'--device', 'cuda']' timed out after 3600 seconds
+2026-08-26 16:31:21,586 - __main__ - ERROR - ❌ Baseline training failed
+2026-08-26 16:31:21,586 - __main__ - INFO - 
+🎉 PIPELINE EXECUTION COMPLETE
+2026-08-26 16:31:21,586 - __main__ - INFO - Results directory: evaluation\full_pipeline\results

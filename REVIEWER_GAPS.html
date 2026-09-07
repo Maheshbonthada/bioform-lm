@@ -1,0 +1,620 @@
+<title>20-Reviewer Gap Analysis</title>
+
+<style>
+  :root {
+    --red: #ef4444;
+    --yellow: #eab308;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --gray: #6b7280;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f9fafb;
+    color: #1f2937;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 2em;
+    margin: 0 0 10px 0;
+    color: #111827;
+  }
+
+  .subtitle {
+    color: #6b7280;
+    font-size: 0.95em;
+    margin-bottom: 30px;
+  }
+
+  .section {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .section h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e7eb;
+    font-size: 1.5em;
+  }
+
+  .issue {
+    padding: 15px;
+    margin-bottom: 12px;
+    border-left: 4px solid;
+    border-radius: 4px;
+  }
+
+  .critical {
+    background: #fee2e2;
+    border-left-color: var(--red);
+  }
+
+  .major {
+    background: #fef3c7;
+    border-left-color: var(--yellow);
+  }
+
+  .minor {
+    background: #dbeafe;
+    border-left-color: var(--blue);
+  }
+
+  .fixed {
+    background: #dcfce7;
+    border-left-color: var(--green);
+  }
+
+  .issue-number {
+    font-weight: 700;
+    font-size: 0.9em;
+  }
+
+  .issue-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 5px 0;
+  }
+
+  .issue-content {
+    margin: 8px 0;
+    font-size: 0.95em;
+  }
+
+  .reviewer-quote {
+    font-style: italic;
+    color: #4b5563;
+    background: rgba(0,0,0,0.02);
+    padding: 10px;
+    border-radius: 4px;
+    margin: 8px 0;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  .status-red {
+    background: var(--red);
+    color: white;
+  }
+
+  .status-yellow {
+    background: var(--yellow);
+    color: #333;
+  }
+
+  .status-blue {
+    background: var(--blue);
+    color: white;
+  }
+
+  .status-green {
+    background: var(--green);
+    color: white;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  .card {
+    background: #f3f4f6;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #3b82f6;
+  }
+
+  .card strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #1f2937;
+  }
+
+  .summary {
+    display: flex;
+    gap: 20px;
+    justify-content: space-around;
+    flex-wrap: wrap;
+  }
+
+  .summary-item {
+    text-align: center;
+  }
+
+  .summary-number {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin: 5px 0;
+  }
+
+  .summary-label {
+    font-size: 0.9em;
+    color: #6b7280;
+  }
+
+  .fix-time {
+    background: #f0f9ff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin-top: 8px;
+    color: #0369a1;
+    font-weight: 500;
+  }
+
+  .timeline {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border-left: 4px solid #8b5cf6;
+  }
+
+  .timeline h4 {
+    margin: 0 0 10px 0;
+    color: #111827;
+  }
+
+  .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    font-size: 0.95em;
+  }
+
+  .timeline-icon {
+    min-width: 30px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #8b5cf6;
+    color: white;
+    border-radius: 50%;
+    margin-right: 12px;
+    font-weight: 700;
+    font-size: 0.9em;
+  }
+
+  .roadmap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+  }
+
+  .roadmap-phase {
+    padding: 15px;
+    border-radius: 6px;
+    border: 2px solid;
+  }
+
+  .phase-critical {
+    background: #fee2e2;
+    border-color: var(--red);
+  }
+
+  .phase-high {
+    background: #fef3c7;
+    border-color: var(--yellow);
+  }
+
+  .phase-medium {
+    background: #dbeafe;
+    border-color: var(--blue);
+  }
+
+  .roadmap-phase h4 {
+    margin: 0 0 10px 0;
+  }
+
+  .roadmap-phase ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.9em;
+  }
+
+  .roadmap-phase li {
+    margin-bottom: 5px;
+  }
+
+  .effort-estimate {
+    font-weight: 600;
+    color: #0369a1;
+    font-size: 0.9em;
+    margin-top: 8px;
+  }
+</style>
+
+<div class="container">
+  <h1>📋 20-Reviewer Gap Analysis</h1>
+  <p class="subtitle">What research reviewers will critique in BioForm-LM, severity ratings, and timeline to fix</p>
+
+  <div class="section">
+    <h2>Summary: Are We Ready?</h2>
+    <div class="summary">
+      <div class="summary-item">
+        <div class="summary-number" style="color: #ef4444;">5</div>
+        <div class="summary-label">Critical Issues</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 5px;">Would cause rejection</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-number" style="color: #eab308;">8</div>
+        <div class="summary-label">Major Issues</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 5px;">Likely rejection if unfixed</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-number" style="color: #3b82f6;">7</div>
+        <div class="summary-label">Minor Issues</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 5px;">Strengthen, not required</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-number" style="color: #22c55e;">84</div>
+        <div class="summary-label">Tests Passing</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 5px;">Code is solid ✓</div>
+      </div>
+    </div>
+    <div style="margin-top: 20px; padding: 12px; background: #fef3c7; border-radius: 6px; color: #713f12;">
+      <strong>Current Verdict:</strong> Code-ready but not publication-ready. Missing validation (real data evaluation). Estimated 3-4 weeks to fix critical issues.
+    </div>
+  </div>
+
+  <!-- CRITICAL ISSUES -->
+  <div class="section">
+    <h2>🔴 Critical Issues (Rejection-Level)</h2>
+    <p style="color: #6b7280; margin-top: 0;">Without fixing these, paper will be rejected despite solid code.</p>
+
+    <div class="issue critical">
+      <div class="issue-number">1. NO REAL DATA EVALUATION</div>
+      <div class="issue-title">BioFormBench exists but is never used</div>
+      <div class="reviewer-quote">"You trained on synthetic data only. How do you know this works on real proteins? Show LOPO results on BioFormBench."</div>
+      <div class="issue-content">
+        <strong>Current state:</strong> scripts/evaluate.py is a placeholder<br>
+        <strong>What's needed:</strong> Implement full LOPO CV on 20-50 real formulations<br>
+        <strong>Impact:</strong> Without this, paper is "transformer on synthetic data" — not novel
+      </div>
+      <span class="status-badge status-red">BLOCKING</span>
+      <div class="fix-time">⏱️ Fix time: 3-5 days (1-2 for data curation, 2-3 for implementation)</div>
+    </div>
+
+    <div class="issue critical">
+      <div class="issue-number">2. CRITIC CIRCULAR TRAINING</div>
+      <div class="issue-title">Critic trained on simulator → evaluated on simulator predictions</div>
+      <div class="reviewer-quote">"Your critic just memorized the simulator. How is this better than using the simulator directly? Where's the evidence the critic adds value?"</div>
+      <div class="issue-content">
+        <strong>Current state:</strong> Critic trained on simulator outputs, scores generated recipes<br>
+        <strong>What's needed:</strong> Ablation showing critic > simulator scoring; validate critic on real data<br>
+        <strong>Impact:</strong> Core novelty claim is suspect without validation
+      </div>
+      <span class="status-badge status-red">BLOCKING</span>
+      <div class="fix-time">⏱️ Fix time: 1-2 days (add simulator-direct baseline to ablations)</div>
+    </div>
+
+    <div class="issue critical">
+      <div class="issue-number">3. NO FAIR BASELINES</div>
+      <div class="issue-title">Comparing RF/SVM on 10-dim features to generative model on sequences</div>
+      <div class="reviewer-quote">"You're comparing apples to oranges. Your predictive baselines use hand-crafted features while your model uses learned representations. Make a fair comparison."</div>
+      <div class="issue-content">
+        <strong>Current state:</strong> Baselines use FeatureExtractor (different feature space)<br>
+        <strong>What's needed:</strong> Fair baseline: sequence-input predict-next-token MLP; compare on same tokenized input<br>
+        <strong>Impact:</strong> Results could be inflated due to unfair baseline comparison
+      </div>
+      <span class="status-badge status-red">BLOCKING</span>
+      <div class="fix-time">⏱️ Fix time: 1-2 days (implement sequence-input baseline classifier)</div>
+    </div>
+
+    <div class="issue critical">
+      <div class="issue-number">4. NO STATISTICAL RIGOR</div>
+      <div class="issue-title">Single training run, no error bars, no significance testing</div>
+      <div class="reviewer-quote">"You show one model trained once. LOPO has one test set. No confidence intervals. How do I know these aren't noise?"</div>
+      <div class="issue-content">
+        <strong>Current state:</strong> Results from single seed (42)<br>
+        <strong>What's needed:</strong> Multi-seed (≥3) LOPO evaluation, report mean ± std, t-tests between baselines<br>
+        <strong>Impact:</strong> Results lack credibility without uncertainty quantification
+      </div>
+      <span class="status-badge status-red">BLOCKING</span>
+      <div class="fix-time">⏱️ Fix time: 2-3 days (multi-seed runs in parallel)</div>
+    </div>
+
+    <div class="issue critical">
+      <div class="issue-number">5. SIMULATOR NOT VALIDATED</div>
+      <div class="issue-title">Mechanistic simulator used but never checked against real data</div>
+      <div class="reviewer-quote">"Your simulator combines DLVO + Lumry-Eyring + heuristics. Has this been validated? What's the error rate?"</div>
+      <div class="issue-content">
+        <strong>Current state:</strong> Simulator generates synthetic training data; no validation step<br>
+        <strong>What's needed:</strong> Run simulator on real BioFormBench formulations, compare predictions vs published outcomes<br>
+        <strong>Impact:</strong> Entire synthetic pretraining pipeline is unvalidated; could be training on garbage
+      </div>
+      <span class="status-badge status-red">BLOCKING</span>
+      <div class="fix-time">⏱️ Fix time: 2-3 days (for 5-10 proteins from BioFormBench)</div>
+    </div>
+  </div>
+
+  <!-- MAJOR ISSUES -->
+  <div class="section">
+    <h2>🟡 Major Issues (Likely Rejection)</h2>
+    <p style="color: #6b7280; margin-top: 0;">Fixable, but each one weakens the paper significantly.</p>
+
+    <div class="issue major">
+      <div class="issue-number">6</div>
+      <div class="issue-title">Tokenization Never Validated</div>
+      <div class="issue-content">No ablation on tokenization choices (vocabulary size, quantization granularity, sequence length)</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 1 day — add ablation on 3 vocab sizes</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">7</div>
+      <div class="issue-title">Hyperparameter Search Not Documented</div>
+      <div class="issue-content">Model has 8+ hyperparams. Were they swept or hand-tuned? No ablation study shown.</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 1-2 days — brief grid search or documentation of choices</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">8</div>
+      <div class="issue-title">No Ablation on Critic Design</div>
+      <div class="issue-content">Critic architecture (4 heads, 3 layers, 64-32-1 head) looks arbitrary. Why not 2 heads? 5 layers?</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 1-2 days — add ablations on nhead and num_layers</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">9</div>
+      <div class="issue-title">Evaluation Metrics Not Justified</div>
+      <div class="issue-content">Why top-k recall? Why Spearman? Are these validated for formulations or borrowed from other domains?</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ < 1 day — write justification in paper methods section</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">10</div>
+      <div class="issue-title">BioFormBench Curation Not Documented</div>
+      <div class="issue-content">Dataset doesn't exist yet. How will you select papers? Quality control? Inter-rater agreement?</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 1 day — write data curation protocol before starting collection</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">11</div>
+      <div class="issue-title">Few-Shot Sensitivity Not Explored</div>
+      <div class="issue-content">LOPO gives model k=3 real examples. Did you test k=1, 5, 10? How sensitive are results?</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 1 day — add ablation on few-shot k value</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">12</div>
+      <div class="issue-title">Missing Error Analysis</div>
+      <div class="issue-content">What formulations does the model fail on? Extreme pH? High salt? Exotic stabilizers?</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 1 day — analyze and document 3-5 failure cases</div>
+    </div>
+
+    <div class="issue major">
+      <div class="issue-number">13</div>
+      <div class="issue-title">No Comparison to Domain Baselines</div>
+      <div class="issue-content">Real baseline: ExPreSo, FormulationDE, or domain-specific formulation software (if available)</div>
+      <span class="status-badge status-yellow">MEDIUM</span>
+      <div class="fix-time">⏱️ 2-3 days — research availability; implement if feasible</div>
+    </div>
+  </div>
+
+  <!-- MINOR ISSUES -->
+  <div class="section">
+    <h2>🔵 Minor Issues (Polish)</h2>
+    <p style="color: #6b7280; margin-top: 0;">These won't change acceptance decision but strengthen the work.</p>
+
+    <div class="grid">
+      <div class="card">
+        <strong>Sparse Docstrings</strong>
+        Functions have 1-line docstrings; missing Args/Returns/Examples.
+        <div class="fix-time">⏱️ 1-2 days</div>
+      </div>
+      <div class="card">
+        <strong>Config Not Snapshotted</strong>
+        No saved config_TIMESTAMP.json during training for reproducibility.
+        <div class="fix-time">⏱️ < 1 day</div>
+      </div>
+      <div class="card">
+        <strong>Missing Reproducibility Statement</strong>
+        Code/data availability and seed info not documented.
+        <div class="fix-time">⏱️ < 1 day</div>
+      </div>
+      <div class="card">
+        <strong>Ethics Discussion Missing</strong>
+        Dual-use (bioweapons) not addressed; limitations not stated.
+        <div class="fix-time">⏱️ < 1 day</div>
+      </div>
+      <div class="card">
+        <strong>Scaling Not Explored</strong>
+        Claims "works on RTX 3050" but only tested on tiny model/data.
+        <div class="fix-time">⏱️ 1 day</div>
+      </div>
+      <div class="card">
+        <strong>No Negative Results</strong>
+        All ablations show improvements. What actually didn't help?
+        <div class="fix-time">⏱️ Document during ablations</div>
+      </div>
+      <div class="card">
+        <strong>Integration Tests Missing</strong>
+        End-to-end simulator→training→evaluation pipeline not tested.
+        <div class="fix-time">⏱️ 1 day</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIXED ISSUES -->
+  <div class="section">
+    <h2>✅ Fixed Issues (Not a Problem)</h2>
+    <div class="grid">
+      <div class="card" style="border-left-color: #22c55e; background: #dcfce7;">
+        <strong>Code Organization</strong>
+        Library code (simulator, model, evaluation) vs scripts (CLI) — production-grade structure ✓
+      </div>
+      <div class="card" style="border-left-color: #22c55e; background: #dcfce7;">
+        <strong>Unit Tests</strong>
+        84 tests covering edge cases, floating-point precision, gradient flow ✓
+      </div>
+      <div class="card" style="border-left-color: #22c55e; background: #dcfce7;">
+        <strong>Checkpoint Management</strong>
+        Model weights automatically saved, best checkpoint selected, guide provided ✓
+      </div>
+      <div class="card" style="border-left-color: #22c55e; background: #dcfce7;">
+        <strong>Reproducibility Infrastructure</strong>
+        Seeds managed, logging enabled, CLI entrypoints working ✓
+      </div>
+      <div class="card" style="border-left-color: #22c55e; background: #dcfce7;">
+        <strong>Ablation Harnesses</strong>
+        No-in-context and no-critic baselines already defined ✓
+      </div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="section">
+    <h2>🗺️ Path to Publication</h2>
+
+    <div class="roadmap">
+      <div class="roadmap-phase phase-critical">
+        <h4>Phase 1: Validation (1-2 weeks)</h4>
+        <ul>
+          <li>Collect BioFormBench</li>
+          <li>Validate simulator</li>
+          <li>Implement LOPO eval</li>
+        </ul>
+        <div class="effort-estimate">Blocker: without this, rejection guaranteed</div>
+      </div>
+
+      <div class="roadmap-phase phase-critical">
+        <h4>Phase 2: Rigor (1 week)</h4>
+        <ul>
+          <li>Multi-seed evaluation</li>
+          <li>Ablation studies</li>
+          <li>Significance testing</li>
+        </ul>
+        <div class="effort-estimate">Critical: makes results credible</div>
+      </div>
+
+      <div class="roadmap-phase phase-medium">
+        <h4>Phase 3: Polish (3-5 days)</h4>
+        <ul>
+          <li>Documentation</li>
+          <li>Error analysis</li>
+          <li>Ethics section</li>
+        </ul>
+        <div class="effort-estimate">Optional: strengthens narrative</div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <h4>⏱️ Realistic Timeline</h4>
+      <div class="timeline-item">
+        <div class="timeline-icon">1</div>
+        <div><strong>Week 1:</strong> BioFormBench collection + simulator validation</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">2</div>
+        <div><strong>Week 2:</strong> LOPO evaluation + multi-seed runs</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">3</div>
+        <div><strong>Week 3:</strong> Ablation studies + hyperparameter justification</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">4</div>
+        <div><strong>Week 4:</strong> Documentation + paper writing</div>
+      </div>
+      <div style="margin-top: 15px; padding: 10px; background: #f0f9ff; border-radius: 4px; font-size: 0.95em;">
+        <strong>Total:</strong> 3-4 weeks from now to submission-ready
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section">
+    <h2>🎯 Recommendations</h2>
+
+    <div style="padding: 15px; background: #dbeafe; border-radius: 6px; margin-bottom: 15px;">
+      <strong>Recommended Venue:</strong> <span style="color: #0369a1; font-weight: 600;">NeurIPS AI4DD Workshop</span> (4-6 weeks)
+      <div style="font-size: 0.9em; margin-top: 5px; color: #0c4a6e;">
+        Easier bar than main track. Great stepping stone to ICML/NeurIPS main conference next year. Shorter timeline for Phase 1+2 only.
+      </div>
+    </div>
+
+    <div style="padding: 15px; background: #fef3c7; border-radius: 6px; margin-bottom: 15px;">
+      <strong>Stretch Venue:</strong> <span style="color: #b45309; font-weight: 600;">NeurIPS/ICML/ICLR Main Track</span> (12+ weeks)
+      <div style="font-size: 0.9em; margin-top: 5px; color: #78350f;">
+        Doable but requires Phase 1+2+3 complete, strong novelty narrative, and possibly more data. Consider as secondary target.
+      </div>
+    </div>
+
+    <div style="padding: 15px; background: #dcfce7; border-radius: 6px;">
+      <strong>Safety Valve:</strong> <span style="color: #15803d; font-weight: 600;">Datasets & Benchmarks Track</span>
+      <div style="font-size: 0.9em; margin-top: 5px; color: #15803d;">
+        If modeling results are marginal, position BioFormBench as main contribution. Good for data-centric papers.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>💡 Key Insight</h2>
+    <div style="background: #f3f4f6; padding: 15px; border-left: 4px solid #3b82f6; border-radius: 4px;">
+      <p style="margin: 0;">
+        <strong>The difference between "cool project" and "publishable research" is validation.</strong>
+      </p>
+      <p style="margin: 10px 0 0 0; color: #4b5563;">
+        Your code is production-ready. Reviewers will give you 8/10 for engineering. But without proving the system works on real data (BioFormBench), with proper statistical rigor (multiple seeds), and fair comparisons (same baseline comparison space), they'll reject it.
+      </p>
+      <p style="margin: 10px 0 0 0; color: #4b5563;">
+        Priority: <strong>Phase 1 (validation) &gt; Phase 2 (rigor) &gt;&gt; Phase 3 (polish)</strong>
+      </p>
+    </div>
+  </div>
+
+</div>

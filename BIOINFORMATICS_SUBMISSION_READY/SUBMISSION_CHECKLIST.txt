@@ -1,0 +1,177 @@
+═══════════════════════════════════════════════════════════════════════════════
+        BIOINFORMATICS SUBMISSION CHECKLIST - SCHOLARONE READY
+═══════════════════════════════════════════════════════════════════════════════
+
+JOURNAL: Bioinformatics (Oxford University Press)
+PLATFORM: ScholarOne Manuscripts
+SUBMISSION URL: https://mc.manuscriptcentral.com/bioinformatics
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 1: ACCOUNT & SUBMISSION SETUP
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Create ScholarOne account (or login if existing)
+□ Go to: https://mc.manuscriptcentral.com/bioinformatics
+□ Click "Submit a New Manuscript"
+□ Fill in basic author information
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 2: MANUSCRIPT & COVER LETTER
+═══════════════════════════════════════════════════════════════════════════════
+
+UPLOAD TO MANUSCRIPT SECTION:
+
+□ Main Manuscript (PDF)
+  File: Manuscript/BioForm-LM_Manuscript.pdf
+  Format: PDF (ready-to-submit)
+  Size: <10 MB
+  Contains: Title, Abstract, Main Text, References
+
+□ Cover Letter (Upload as additional document or paste in form)
+  File: Metadata/COVER_LETTER.txt
+  Text to paste: [See file for content]
+  Max length: 500 words
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 3: FIGURES
+═══════════════════════════════════════════════════════════════════════════════
+
+UPLOAD EACH FIGURE AS SEPARATE FILE:
+
+□ Figure 1: Model Architecture
+  File: Figures/Kumar_Figure1_Architecture.pdf
+  Format: PDF (high quality)
+  Caption: [In manuscript]
+
+□ Figure 2: Results Comparison
+  File: Figures/Kumar_Figure2_Results.pdf
+  Format: PDF (high quality)
+  Caption: [In manuscript]
+
+□ Figure 3: Calibration & Diversity
+  File: Figures/Kumar_Figure3_PerProtein.pdf
+  Format: PDF (high quality)
+  Caption: [In manuscript]
+
+□ Figure 4: Ablation Study
+  File: Figures/Kumar_Figure4_Ablations.pdf
+  Format: PDF (high quality)
+  Caption: [In manuscript]
+
+□ Figure 5: Coverage Analysis
+  File: Figures/Kumar_Figure5_Coverage.pdf
+  Format: PDF (high quality)
+  Caption: [In manuscript]
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 4: SUBMISSION FORM FIELDS
+═══════════════════════════════════════════════════════════════════════════════
+
+ARTICLE TYPE:
+□ Select: "Research Article"
+
+TITLE:
+□ "BioForm-LM: Generative Design of Biologics Formulations via In-Context
+   Learning and Physics-Informed Decoding"
+
+ABSTRACT (300 words):
+□ Copy from: Metadata/ABSTRACT.txt
+
+KEYWORDS (4-6):
+□ generative design
+□ biologics formulations
+□ in-context learning
+□ mechanistic simulation
+□ few-shot adaptation
+□ extreme data scarcity
+
+AUTHOR INFORMATION:
+□ Name: Bonthada Sravan Kumar
+□ Affiliation: Independent Researcher, Genes Project
+□ Email: support@anything.online
+□ ORCID: [Optional if available]
+
+COMPETING INTERESTS:
+□ Select: "No competing interests declared"
+
+FUNDING:
+□ "No external funding"
+
+SUGGESTED REVIEWERS (Optional but Recommended):
+□ Field 1: Formulation scientist (DLVO/stability expert)
+□ Field 2: Generative ML researcher (in-context learning)
+□ Field 3: Bioinformatics methods researcher (sim-to-real)
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 5: SUPPLEMENTARY MATERIALS (OPTIONAL)
+═══════════════════════════════════════════════════════════════════════════════
+
+RECOMMENDED TO INCLUDE:
+
+□ BioFormBench Dataset
+  File: Supplementary/BioFormBench_67_formulations.csv
+  Description: "Complete BioFormBench dataset (67 formulations)"
+
+□ Simulator Code
+  File: Supplementary/mechanistic_simulator.py
+  Description: "DLVO + Lumry-Eyring mechanistic simulator code"
+
+□ Extended Methods
+  File: Supplementary/EXTENDED_METHODS.txt
+  Description: "Additional implementation details and hyperparameters"
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 6: FINAL VERIFICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+MANUSCRIPT CHECK:
+□ Title page has author information
+□ Abstract is 250-300 words
+□ All figures are referenced in text
+□ All references are complete
+□ No track changes visible
+□ Font is 11-12pt (Times New Roman or Arial)
+□ Spacing is consistent
+
+FIGURE CHECK:
+□ All 5 figures uploaded
+□ Correct file names used
+□ Resolution is 300+ DPI
+□ File sizes < 10 MB each
+□ Captions are detailed and self-contained
+□ All text is legible
+
+METADATA CHECK:
+□ All required fields filled
+□ No blank/incomplete entries
+□ Email address is correct
+□ Affiliation is specified
+□ Keywords are separated by commas
+□ No typos in title
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 7: SUBMIT
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Review all information once more
+□ Click "Submit Manuscript"
+□ Receive confirmation email with manuscript number
+□ Save confirmation (reference for tracking)
+
+EXPECTED TIMELINE:
+- Desk Review: 2-3 weeks
+- Peer Review: 4-8 weeks
+- Decision Email: Week 8-10
+
+═══════════════════════════════════════════════════════════════════════════════
+SUPPORT
+═══════════════════════════════════════════════════════════════════════════════
+
+If Issues During Submission:
+- Contact ScholarOne Support: https://support.clarivate.com/
+- Contact Bioinformatics Editor: bioinformatics@oup.com
+- Reference this checklist for troubleshooting
+
+═══════════════════════════════════════════════════════════════════════════════
+STATUS: READY FOR IMMEDIATE SUBMISSION
+═══════════════════════════════════════════════════════════════════════════════

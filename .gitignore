@@ -1,0 +1,47 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data (large files, generated)
+data/*.csv
+data/*.parquet
+data/*.pkl
+*.log
+
+# Checkpoints (large, regenerable)
+**/checkpoints/**
+!**/checkpoints/.gitkeep
+
+# Results
+results/
+experiments/checkpoints/
+evaluation/full_pipeline/checkpoints/
+evaluation/full_pipeline/results/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Submission packages (keep source, not generated)
+BIOINFORMATICS_SUBMISSION_READY/Manuscript/*.pdf
+RESEARCH_SQUARE_PREPRINT/Manuscript/*.pdf
+
+# Temporary
+*.tmp
+.cache/
