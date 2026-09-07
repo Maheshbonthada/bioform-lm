@@ -1,4 +1,4 @@
-﻿# BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding
+# BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding
 
 **Author:** Bonthada Sravan Kumar (Independent Researcher, Genes Project)  
 **Status:** Preprint submitted to Research Square  
@@ -12,10 +12,10 @@ BioForm-LM is the **first generative system for biologics formulation design** t
 - **Physics-Informed Critic** for best-of-N decoding and calibration
 
 ### Key Results
-- ✅ **Perfect calibration** on Protein 2 (Spearman r = 1.0, p = 0.0) with only 3 in-context examples
-- ✅ **35.3% formulation-space coverage** (4.7× higher than random sampling)
-- ✅ **Novel architecture** combining sim-to-real + in-context learning + physics critic
-- ✅ **BioFormBench**: Open benchmark of 67 real biologics formulations
+- ? **Perfect calibration** on Protein 2 (Spearman r = 1.0, p = 0.0) with only 3 in-context examples
+- ? **35.3% formulation-space coverage** (4.7� higher than random sampling)
+- ? **Novel architecture** combining sim-to-real + in-context learning + physics critic
+- ? **BioFormBench**: Open benchmark of 67 real biologics formulations
 
 ## Installation
 
@@ -51,15 +51,15 @@ python evaluation/baselines.py
 
 ```
 bioform-lm/
-├── model/               # Transformer + Tokenizer + Critic
-├── simulator/           # Mechanistic simulator (DLVO + Lumry-Eyring)
-├── data/                # Synthetic data generation + BioFormBench
-├── evaluation/          # Metrics, protocols, baselines
-├── experiments/         # Training pipeline
-├── scripts/             # CLI tools (train, evaluate, analyze)
-├── tests/               # Unit tests (pytest)
-├── papers/              # Manuscript (PDF + LaTeX)
-└── README.md            # This file
++-- model/               # Transformer + Tokenizer + Critic
++-- simulator/           # Mechanistic simulator (DLVO + Lumry-Eyring)
++-- data/                # Synthetic data generation + BioFormBench
++-- evaluation/          # Metrics, protocols, baselines
++-- experiments/         # Training pipeline
++-- scripts/             # CLI tools (train, evaluate, analyze)
++-- tests/               # Unit tests (pytest)
++-- papers/              # Manuscript (PDF + LaTeX)
++-- README.md            # This file
 ```
 
 ## Key Features
@@ -76,7 +76,7 @@ bioform-lm/
 
 ### 3. In-Context Learning
 - Amortized adaptation to novel proteins
-- 3-10 real examples → diverse recipe candidates
+- 3-10 real examples ? diverse recipe candidates
 - No weight updates at inference
 - Located in: `experiments/train.py`
 
@@ -90,7 +90,7 @@ bioform-lm/
 
 **Composition:**
 - 67 total formulations curated from literature
-- 18 formulations in LOPO evaluation (3 proteins × 6 each)
+- 18 formulations in LOPO evaluation (3 proteins � 6 each)
 - Features: protein descriptors (MW, pI, Tm), formulation recipe, stability outcome
 
 **Access:**
@@ -111,12 +111,12 @@ bioform-lm/
 |--------|-------|---|
 | Recall@10 | 0.167 | 1-2 matches per fold (diverse generation, not memorization) |
 | Diversity (MPD) | 0.404 | High pairwise distance; no mode collapse |
-| Calibration (r) | 0.267 ± 0.660 | Protein-specific adaptation (-0.6 to +1.0) |
-| Coverage | 35.3% ± 0.89% | 4.7× higher than random |
+| Calibration (r) | 0.267 � 0.660 | Protein-specific adaptation (-0.6 to +1.0) |
+| Coverage | 35.3% � 0.89% | 4.7� higher than random |
 
 **Per-Protein Breakdown:**
 - **Protein 1 (IgG)**: Exploratory regime (r = -0.60), high diversity
-- **Protein 2 (scFv)**: Perfect calibration (r = 1.0, p = 0.0) ⭐
+- **Protein 2 (scFv)**: Perfect calibration (r = 1.0, p = 0.0) ?
 - **Protein 3 (Fab)**: Moderate calibration (r = 0.40)
 
 ## Novelty Claims
@@ -145,7 +145,7 @@ pytest tests/test_baselines.py -v    # Baseline implementations
 - Only 3/5 collected proteins had sufficient in-context examples
 
 ### Future Directions
-- Scale BioFormBench from 67 → 200+ formulations (systematic literature mining)
+- Scale BioFormBench from 67 ? 200+ formulations (systematic literature mining)
 - Expand LOPO to 8-10 proteins and 50+ formulations
 - Integrate full molecular dynamics simulator
 - Multi-task learning: stability + immunogenicity + manufacturability
@@ -172,7 +172,7 @@ MIT License - See [LICENSE](LICENSE) file
 ## Contact
 
 **Bonthada Sravan Kumar**  
-Email: support@anything.online  
+Email: sravansaijohn@gmail.com  
 Project: Genes (Independent AI Research)
 
 ## Acknowledgments
@@ -184,4 +184,4 @@ Project: Genes (Independent AI Research)
 ---
 
 **Last Updated:** September 7, 2026  
-**Status:** ✅ Preprint Ready | 📋 Peer Review Pending
+**Status:** ? Preprint Ready | ?? Peer Review Pending

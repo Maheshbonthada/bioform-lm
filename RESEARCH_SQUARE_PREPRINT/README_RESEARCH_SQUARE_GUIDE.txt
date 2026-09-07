@@ -108,7 +108,7 @@ STEP 5: ADD AUTHOR INFORMATION
 ────────────────────────────────
 Primary Author:
 □ Full Name: Bonthada Sravan Kumar
-□ Email: support@anything.online
+□ Email: sravansaijohn@gmail.com
 □ Affiliation: Independent Researcher, Genes Project
 □ Country: [Your country]
 

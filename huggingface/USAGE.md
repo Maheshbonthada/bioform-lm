@@ -297,7 +297,7 @@ If you use BioForm-LM, please cite:
 
 - **Issues:** https://github.com/Maheshbonthada/bioform-lm/issues
 - **Discussions:** https://github.com/Maheshbonthada/bioform-lm/discussions
-- **Email:** support@anything.online
+- **Email:** sravansaijohn@gmail.com
 
 ---
 

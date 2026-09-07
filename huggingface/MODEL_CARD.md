@@ -171,7 +171,7 @@ The model is designed to accelerate wet-lab screening, not replace it.
 
 **Bonthada Sravan Kumar**  
 Independent Researcher, Genes Project  
-Email: support@anything.online
+Email: sravansaijohn@gmail.com
 
 ## License
 

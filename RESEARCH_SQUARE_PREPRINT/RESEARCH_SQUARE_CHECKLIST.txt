@@ -12,7 +12,7 @@ PHASE 1: PREPARATION (Before You Log In)
 
 □ Read README_RESEARCH_SQUARE_GUIDE.txt (understand the process)
 □ Prepare manuscript file (PDF or DOCX, <20 MB if possible)
-□ Have email address ready (support@anything.online)
+□ Have email address ready (sravansaijohn@gmail.com)
 □ Have author information ready (from Metadata/AUTHOR_INFORMATION.txt)
 □ Have abstract ready (from Metadata/ABSTRACT.txt)
 □ Have keywords ready (from Metadata/KEYWORDS.txt)
@@ -66,7 +66,7 @@ PHASE 5: AUTHOR INFORMATION
 
 PRIMARY AUTHOR:
 □ Full Name: Bonthada Sravan Kumar
-□ Email: support@anything.online
+□ Email: sravansaijohn@gmail.com
 □ Affiliation: Independent Researcher, Genes Project
 □ Country: [Your country]
 

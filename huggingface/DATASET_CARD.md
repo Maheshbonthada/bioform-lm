@@ -217,7 +217,7 @@ cd bioform-lm
 ## Contact
 
 **Dataset Curator:** Bonthada Sravan Kumar  
-Email: support@anything.online  
+Email: sravansaijohn@gmail.com  
 Questions: Open issue on GitHub (Maheshbonthada/bioform-lm)
 
 ## License

@@ -15,7 +15,7 @@
 ### Authors
 **Bonthada Sravan Kumar**  
 Independent Researcher  
-Email: support@anything.online  
+Email: sravansaijohn@gmail.com  
 GitHub: [to be provided upon acceptance]
 
 ---
@@ -142,7 +142,7 @@ Respectfully submitted,
 Bonthada Sravan Kumar
 Independent Researcher
 Genes Project
-support@anything.online
+sravansaijohn@gmail.com
 ```
 
 ---

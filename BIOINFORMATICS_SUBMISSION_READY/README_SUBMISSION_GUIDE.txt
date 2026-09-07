@@ -68,7 +68,7 @@ Fields to fill:
 ✓ Manuscript Title: "BioForm-LM: Generative Design of Biologics Formulations
   via In-Context Learning and Physics-Informed Decoding"
 ✓ Author Name: Bonthada Sravan Kumar
-✓ Author Email: support@anything.online
+✓ Author Email: sravansaijohn@gmail.com
 ✓ Affiliation: Independent Researcher, Genes Project
 ✓ Phone: [Optional]
 
@@ -262,7 +262,7 @@ CONTACT INFORMATION
 ═══════════════════════════════════════════════════════════════════════════════
 
 Corresponding Author: Bonthada Sravan Kumar
-Email: support@anything.online
+Email: sravansaijohn@gmail.com
 
 Journal Editor: bioinformatics@oup.com
 ScholarOne Support: https://support.clarivate.com/

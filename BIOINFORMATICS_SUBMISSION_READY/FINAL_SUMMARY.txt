@@ -52,7 +52,7 @@ FOLDER STRUCTURE & CONTENTS
 │  ├─ AUTHOR_INFORMATION.txt (All form fields)
 │  │  └─ Reference for filling author/affiliation sections
 │  │  └─ Author: Bonthada Sravan Kumar
-│  │  └─ Email: support@anything.online
+│  │  └─ Email: sravansaijohn@gmail.com
 │  │
 │  └─ COVER_LETTER.txt (350 words)
 │     └─ Copy-paste to "Cover Letter" field in ScholarOne
@@ -96,7 +96,7 @@ FIGURES (5 TOTAL):
 
 METADATA:
 ✅ Author name: Bonthada Sravan Kumar
-✅ Email: support@anything.online
+✅ Email: sravansaijohn@gmail.com
 ✅ Affiliation: Independent Researcher, Genes Project
 ✅ Article type: Research Article
 ✅ Competing interests: None declared

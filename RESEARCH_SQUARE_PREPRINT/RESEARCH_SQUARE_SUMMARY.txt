@@ -136,7 +136,7 @@ TITLE:
 Learning and Physics-Informed Decoding"
 
 AUTHOR:
-Bonthada Sravan Kumar (support@anything.online)
+Bonthada Sravan Kumar (sravansaijohn@gmail.com)
 Independent Researcher, Genes Project
 
 KEYWORDS:
