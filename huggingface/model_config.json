@@ -1,7 +1,7 @@
 {
-  "model_id": "Maheshbonthada/bioform-lm",
+  "model_id": "Sravankumarbonthada/bioform-lm",
   "model_name": "BioForm-LM",
-  "description": "Generative design of biologics formulations via in-context learning and physics-informed decoding",
+  "description": "Sim-to-real in-context generative formulation-design pipeline, audited. See MODEL_CARD.md: the central protein-conditional claim is not supported by evidence collected so far; the verified finding is that in-context conditioning requires in-context-structured pretraining (p=0.0039).",
   "license": "mit",
   "tags": [
     "drug-discovery",
@@ -9,12 +9,11 @@
     "formulation-design",
     "generative-model",
     "in-context-learning",
-    "transformers",
-    "few-shot-learning",
-    "mechanistic-simulator"
+    "mechanistic-simulator",
+    "negative-result"
   ],
   "datasets": [
-    "Maheshbonthada/BioFormBench"
+    "Sravankumarbonthada/BioFormBench"
   ],
   "architecture": {
     "type": "decoder-only-transformer",
@@ -24,70 +23,68 @@
     "num_heads": 8,
     "intermediate_size": 1024,
     "max_position_embeddings": 64,
-    "dropout": 0.1
+    "dropout": 0.1,
+    "num_parameters": 4892507
+  },
+  "checkpoints": {
+    "checkpoint_icl_best.pt": {
+      "description": "Pretrained on in-context-structured sequences (K example pairs + query)",
+      "path": "checkpoints/checkpoint_icl_best.pt"
+    },
+    "checkpoint_conditional_best.pt": {
+      "description": "Pretrained on flat (protein, recipe, outcome) triples only, same corpus otherwise",
+      "path": "checkpoints/checkpoint_conditional_best.pt"
+    }
   },
   "training": {
     "framework": "PyTorch",
-    "optimizer": "Adam",
-    "learning_rate": 1e-4,
-    "batch_size": 32,
-    "epochs": 15,
-    "loss": "CrossEntropyLoss",
-    "hardware": "2x RTX 3050 (8GB VRAM each)",
-    "training_time_hours": 4
+    "optimizer": "AdamW",
+    "scheduler": "OneCycleLR",
+    "loss": "joint next-recipe-token CE (masked to simulator-preferred rows) + stability-bin CE",
+    "hardware": "RTX 3050 (8GB) + 28-core CPU for parallel data generation"
   },
-  "evaluation": {
-    "protocol": "Leave-one-protein-out (LOPO) cross-validation",
-    "dataset": "BioFormBench",
+  "verified_evaluation": {
+    "protocol": "Leave-one-protein-out (LOPO), 9 folds, BioFormBench-Real",
+    "reproduction_script": "scripts/evaluate_real.py",
     "metrics": {
-      "recall_at_10": 0.167,
-      "diversity_mpd": 0.404,
-      "calibration_spearman_r": 0.267,
-      "coverage_percent": 35.3
+      "likelihood_percentile": {"mean": 0.797, "ci95": [0.729, 0.865], "chance": 0.5,
+        "caveat": "unconditional (protein-blind) baseline scores higher (0.872); this metric alone does not evidence conditional knowledge"},
+      "protein_specificity": {"mean": 0.509, "ci95": [0.358, 0.669], "chance": 0.5,
+        "caveat": "the metric that isolates conditional knowledge; statistically indistinguishable from chance"},
+      "recall_at_10": {"mean": 0.011, "ci95": [0.0, 0.033]},
+      "calibration_spearman_r": {"mean": 0.280, "ci95": [-0.405, 0.964]}
     },
-    "per_protein_results": {
-      "protein_1_igg": {
-        "recall_at_10": 0.50,
-        "calibration_r": -0.60,
-        "regime": "exploratory"
-      },
-      "protein_2_scfv": {
-        "recall_at_10": 0.0,
-        "calibration_r": 1.0,
-        "calibration_p_value": 0.0,
-        "regime": "perfect"
-      },
-      "protein_3_fab": {
-        "recall_at_10": 0.0,
-        "calibration_r": 0.40,
-        "regime": "moderate"
-      }
+    "icl_necessity_finding": {
+      "metric": "likelihood_percentile, with vs. without real in-context examples at inference",
+      "icl_trained_model": {"n_improved": 9, "n_total": 9, "mean_delta": 0.0268},
+      "flat_trained_model": {"n_improved": 0, "n_total": 9, "mean_delta": -0.0596},
+      "exact_permutation_p": 0.0039,
+      "reproduction": "rerun scripts/evaluate_real.py with --shots 2 vs --no-context for each checkpoint"
     }
   },
   "intended_use": {
-    "primary": "Generate de novo biologics formulations for novel proteins",
-    "input": "Protein descriptors (MW, pI, Tm) + 3-10 real stability measurements",
-    "output": "50 candidate formulation recipes ranked by predicted stability",
-    "validation": "Computational hypotheses for wet-lab screening (not clinical deployment)"
+    "primary": "Reference implementation of the sim-to-real + in-context architecture; demonstration of the ICL-training-necessity finding, independent of the formulation domain",
+    "not_supported_yet": "Generating formulations expected to be protein-specific; the evidence available does not support this use",
+    "validation": "Computational hypotheses only, not clinical or manufacturing recommendations"
   },
   "limitations": [
-    "Evaluation on 18 formulations (3 proteins) - scaling to 200+ planned",
-    "DLVO + Lumry-Eyring physics - simplified model, not full molecular dynamics",
-    "No wet-lab validation - computational predictions only",
-    "Only 3/5 collected proteins had sufficient in-context examples"
+    "BioFormBench-Real supports only 9 LOPO folds",
+    "Protein descriptors are 3 quantized scalars (MW, pI, baseline Tm), not full sequence",
+    "A separate n=80 sequence-based analysis (BioFormBench-Marketed) also found no detectable protein effect on real marketed formulation choice",
+    "No wet-lab validation at any stage",
+    "Simulator v2 pathway weights are literature-informed, round numbers, not fit by optimization"
   ],
   "author": {
     "name": "Bonthada Sravan Kumar",
     "email": "sravansaijohn@gmail.com",
-    "affiliation": "Independent Researcher, Genes Project"
+    "affiliation": "Independent Researcher"
   },
   "links": {
     "github": "https://github.com/Maheshbonthada/bioform-lm",
-    "preprint": "https://www.researchsquare.com",
-    "dataset": "https://huggingface.co/datasets/Maheshbonthada/BioFormBench"
+    "dataset": "https://huggingface.co/datasets/Sravankumarbonthada/BioFormBench"
   },
   "citations": {
-    "paper": "@article{kumar2026bioformlm, title={BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding}, author={Kumar, Bonthada Sravan}, journal={Research Square}, year={2026}}",
-    "dataset": "@dataset{kumar2026bioformbench, title={BioFormBench: Benchmark for Generative Biologics Formulation Design}, author={Kumar, Bonthada Sravan}, year={2026}}"
+    "paper": "@article{kumar2026bioformlm, title={What Determines a Biologic's Formulation? Two Open Benchmarks, an Audited Mechanistic Simulator, and a Well-Powered Platform-Convergence Result}, author={Kumar, Bonthada Sravan}, year={2026}}",
+    "dataset": "@dataset{kumar2026bioformbench, title={BioFormBench: Two Open Benchmarks for Biologics Formulation Research}, author={Kumar, Bonthada Sravan}, year={2026}}"
   }
 }

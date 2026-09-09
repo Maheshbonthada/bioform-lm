@@ -1,0 +1,175 @@
+---
+title: "What Determines a Biologic's Formulation? Two Open Benchmarks, an Audited Mechanistic Simulator, and a Well-Powered Platform-Convergence Result"
+---
+
+<!-- Author details are given explicitly below rather than as YAML `author:`/
+     `date:`, which pandoc would render a second time under the title. -->
+
+**Bonthada Sravan Kumar**
+
+Independent Researcher
+
+Correspondence: sravansaijohn@gmail.com
+
+September 8, 2026
+
+# Abstract
+
+**Motivation:** Generative design of biologics formulations (buffer, pH, ionic strength, stabilizers) is attractive precisely where it is hardest to validate: open real-world data is scarce, and mechanistic simulators used to augment it are rarely audited for structural pathologies. We show both problems concretely and address them.
+
+**Results:** We release two open, fully-sourced benchmarks: BioFormBench-Real (49 literature-mined formulations, 13 proteins, provenance-checked against 11 primary papers) and BioFormBench-Marketed (165 formulations for 80 FDA-approved antibodies, deterministically parsed from FDA product labels and linked to Thera-SAbDab variable-domain sequences). Auditing a standard DLVO + Lumry–Eyring mechanistic simulator, we find two of eight recipe slots are structurally dead (buffer identity changes predicted stability by exactly 0.0) and three of four continuous variables are monotone for 100% of sampled proteins, collapsing all optima to box corners; we fix this with nine literature-anchored competing degradation pathways, raising interior-optimum pH solutions from 18% to 95.5% of cases without fitting to either benchmark. Using BioFormBench-Marketed at adequate power (n=80 molecules), we test whether protein sequence identity predicts the marketed formulation pH or buffer: a naive n=27 subsample suggests it does (Spearman ρ = −0.464, p = 0.015), but this is a selection artifact that vanishes at full sample size (ρ = −0.019, p = 0.86; Holm-adjusted p = 0.137 even at n=27) and fails leave-one-protein-out prediction (MAE 0.419 vs. a 0.393 no-information baseline). Instead, formulation choice is dominated by a small, conventional design space (platform effect): pH clusters at mean 5.90 ± 0.58, a single buffer covers 52% of cases, and no available covariate beats a constant platform baseline (all sign-flip p > 0.8). Separately, in a controlled architecture experiment, we show that in-context conditioning on per-protein examples only works if the generator is pretrained on in-context-structured sequences: supplying real few-shot context at inference raises the likelihood the model assigns the true held-out formulation on 9/9 held-out proteins for the ICL-trained model, and lowers it on 9/9 for a flat-trained model with the same pretraining corpus (exact permutation p = 0.0039 in each direction).
+
+**Availability:** Code, corrected simulator, and both datasets are openly released (see Data and code availability).
+
+**Contact:** sravansaijohn@gmail.com
+
+**Keywords:** biologics formulation; mechanistic simulator audit; benchmark dataset; in-context learning; protein-conditional design; negative results; selection artifacts
+
+# 1. Introduction
+
+## 1.1 The formulation gap, and a second gap behind it
+
+Designing stable formulations for biologics is a decades-old pharmaceutical problem. Current practice relies on manual screening, expert rules and slow iterative laboratory cycles. Formulation screening data is overwhelmingly proprietary, and computationally there is a further gap: no openly released benchmark links real protein identity to real formulation outcomes at a scale that supports a protein-conditional claim, and the mechanistic simulators used to substitute for real data are rarely checked for whether their optimization landscape can express protein-dependent structure at all.
+
+This paper is the result of auditing a generative formulation-design pipeline built on exactly that substitution — mechanistic pretraining data plus a small literature benchmark — and finding both halves needed correction before any claim about the pipeline could be trusted. Rather than report the pipeline's original numbers, we report what the audit found, fix what can be fixed without new data collection, and test the central claim (protein identity determines formulation) directly against the largest real dataset we could assemble openly.
+
+## 1.2 Prior work and where this sits
+
+Existing generative models operate on adjacent but distinct objects. Small-molecule SMILES models (SMolLM, Mamba-Chem) generate drug molecules, not formulations. Protein sequence design methods (AbMPNN, ESM-IFD) modify the protein itself rather than its formulation environment. Pharmacokinetic trajectory models such as AICMET forecast concentration curves over time, not recipe composition. Formulation-specific tools (ExPreSo, FormulationDE) score or rank given recipes against a fixed candidate set. None of these are built to be checked against an open, real, protein-linked formulation benchmark at the scale we assemble here, and to our knowledge no prior work audits a mechanistic formulation simulator for the structural pathologies (dead recipe slots, corner-collapsing optima) we document in Section 2.3.
+
+## 1.3 Contribution
+
+1. **Two open benchmarks.** BioFormBench-Real purges 18 unsourced placeholder rows from an earlier internal draft and keeps 49 rows with verified provenance to 11 primary papers. BioFormBench-Marketed is new: 165 formulations for 80 FDA-approved antibodies, built by deterministic parsing of FDA Structured Product Labeling and linked to real VH/VL sequences from Thera-SAbDab — to our knowledge the first open dataset connecting therapeutic antibody sequence to marketed formulation composition at this scale.
+2. **A simulator audit and fix.** We introduce a simple diagnostic (interior-argmax fraction, dead-slot spread) that any mechanistic formulation simulator can be checked against, apply it to a standard DLVO + Lumry–Eyring simulator, and correct the pathologies it reveals with nine literature-anchored degradation pathways, validated out-of-sample against BioFormBench-Marketed.
+3. **A well-powered test of the central claim,** run twice at two sample sizes to make a general methodological point: a promising, correctly-signed, bootstrap-stable effect at n=27 (Section 3.2) is a selection artifact that disappears at n=80 and under leave-one-protein-out validation. We report this as a worked cautionary example, since small literature-mined pharma-ML studies are structurally prone to exactly this failure mode.
+4. **The platform-convergence result.** At adequate power we show marketed formulation choice is dominated by a narrow, conventional design space rather than by molecule-specific physics, with no tested covariate beating a constant baseline.
+5. **An architecture-level finding, independent of the domain result:** in-context conditioning on few-shot examples requires the generator to be pretrained on in-context-structured sequences; without that, additional context actively hurts.
+
+# 2. Methods
+
+## 2.1 BioFormBench-Real: provenance audit
+
+The benchmark originates from literature mining of DSF Tm-shift, SEC aggregation and turbidity assays. An internal draft contained 67 rows; auditing `source_title`/`source_id` provenance found 18 rows (`protein_1`–`protein_5`) carrying no citation and suspiciously round descriptors (50.0 kDa / pI 7.2 / Tm 65.0 °C) shared across otherwise-different molecules — development scaffolding, not literature data. These are removed. The remaining 49 rows trace to 11 PubMed Central articles spanning 13 distinct proteins (trastuzumab, omalizumab, adalimumab, PGT121, an A33 Fab, rhIL-1ra and others), each verified against its source text.
+
+## 2.2 BioFormBench-Marketed: construction
+
+**Product enumeration and label retrieval.** We take the 200 antibody therapeutics marked *Approved* in Thera-SAbDab, of which 197 carry both heavy- and light-chain variable sequences. For each of the corresponding 137 matched INNs we query the DailyMed Structured Product Labeling API for associated products and retrieve the DESCRIPTION section (LOINC 34089-3) of up to four labels per INN, yielding 189 label texts.
+
+**Deterministic parsing.** FDA labels state composition in three interchangeable styles — "L-histidine (3 mg)", "136.2 mg trehalose dihydrate", and "histidine (8 mM)" — and a single label frequently describes multiple presentations (e.g. a 75 mg/mL and a 150 mg/mL pen) that are genuinely different formulations. We extract each presentation as a separate record via regular-expression matching against a fixed table of molar masses, computing molar concentrations from stated mass and fill volume where needed. Every parsed field retains its verbatim source sentence for audit. This yields 283 presentation-level records; requiring a valid pH (pharmaceutical range 4.0–9.0) keeps 165 across 80 molecules, of which 64 also carry a fully resolved buffer species and concentration across 28 molecules. pH values extracted from within the same sentence as the excipient list are flagged separately from document-level fallback values, so downstream analyses can be (and are, Section 3.2) stratified by extraction confidence.
+
+**Sequence-derived protein descriptors.** Within an antibody isotype the constant regions are shared, so the variable domain is precisely what differs between therapeutics. For each molecule we concatenate VH and VL sequences and compute, via Biopython's ProtParam: isoelectric point, net charge at pH 5/6/7 (Henderson–Hasselbalch over ionizable side chains), GRAVY hydropathy, aromaticity, instability index, and residue-composition fractions. As a sanity check against the literature, computed Fv isoelectric point for trastuzumab is 8.61 against a published capillary isoelectric focusing value of 8.4.
+
+## 2.3 Mechanistic simulator: audit methodology
+
+The baseline simulator (v1) combines DLVO colloidal repulsion and Lumry–Eyring thermodynamic stabilization, both stabilizing-only terms. We diagnose it with two tests applicable to any mechanistic formulation simulator: (i) *dead-slot spread* — vary one recipe field alone and measure the change in predicted stability; a spread of exactly 0.0 means that field cannot be learned from simulator-preferred data, by construction; (ii) *interior-argmax fraction* — for each of many sampled proteins, sweep one continuous field over its full range on a fine grid and record whether the maximum falls strictly inside the range (a genuine trade-off) or at a box edge (a degenerate, corner-seeking optimum).
+
+Applying these tests to v1: buffer species and buffer concentration change predicted stability by exactly 0.0 (dead slots); ionic strength, osmolarity and temperature are monotone, hence corner-seeking, for 100% of 200 sampled proteins (interior-argmax fraction 0% for all three); pH is corner-seeking in 35% of cases. A generative model trained to reproduce v1-preferred recipes can therefore learn protein-conditional structure in at most one of eight recipe slots, and even that slot is degenerate over a third of the time.
+
+## 2.4 Mechanistic simulator: correction (v2)
+
+We add nine literature-anchored, competing degradation pathways (full detail in the released code, `simulator/mechanistic_sim_v2.py`): Henderson–Hasselbalch buffer capacity (fixed pKa per species, e.g. histidine 6.04, phosphate 7.20, from standard reference tables), base-catalyzed Asn deamidation and acid hydrolysis (opposing pH-rate profiles following established formulation-stability literature), Hofmeister salting-out (onset shifted by protein hydrophobicity), USP parenteral isotonicity (target 290 mOsm/kg, scored against osmolarity implied by the recipe's own salt and sugar content rather than a free-floating field), polysorbate peroxide-mediated oxidation, sugar-driven viscosity, and polyvalent-anion (citrate/phosphate) bridging of net-cationic protein. Pathway weights are round, pre-specified numbers (0.50 / 0.18 / 0.12 / 0.08 / 0.06 / 0.06 for the core DLVO+Lumry–Eyring term, chemical degradation, buffer capacity, Hofmeister, tonicity and excipient terms respectively), not fit to either benchmark; the benchmarks remain a genuine held-out test.
+
+## 2.5 Statistical protocol
+
+All correlations are Spearman, tested by exact permutation (vectorized rank permutation, 2×10⁵ resamples) rather than the asymptotic t-approximation, appropriate given sample sizes as small as n=9 elsewhere in this line of work. Screening multiple sequence features against one target uses Holm–Bonferroni correction. Point estimates carry 2.5–97.5% percentile bootstrap intervals (20,000 resamples). The decisive test for any claimed predictive relationship is leave-one-protein-out (LOPO): a ridge model fit on all molecules but one predicts the held-out molecule's outcome, compared by mean absolute error against a no-information baseline, with significance from a paired sign-flip permutation test over molecules. Repeated presentations of the same molecule are collapsed to one row (median of numeric fields) before any test, so n is always the number of distinct proteins, never the number of records.
+
+## 2.6 Generative model and in-context training
+
+A decoder-only transformer (4.9M parameters; hidden dim 256, 6 layers, 8 heads) is trained under causal attention with two objectives: next-recipe-token prediction, masked to simulator-preferred rows, and stability-bin classification. We compare a model trained only on flat (protein, recipe, outcome) triples against one additionally trained on explicitly in-context-structured sequences — K example (recipe, outcome) pairs for a protein followed by a query — so that the effect of supplying real few-shot context at inference can be isolated from whether the model was ever exposed to that sequence structure during training.
+
+# 3. Results
+
+## 3.1 Simulator audit and correction
+
+![Simulator audit and correction. (a) v1 is monotone in ionic strength, osmolarity and temperature for essentially every sampled protein, so its optimum collapses to a box corner; buffer species and concentration are dead slots (predicted-stability spread = 0.0). (b) v2 adds nine competing degradation pathways, raising the interior-optimum fraction for pH from 18% to 95.5% without fitting either quantity to real data.](figures/fig1_architecture.png)
+
+v1's interior-argmax fraction is 0% for ionic strength, osmolarity and temperature and 18% for pH; v2 raises these to 39.5%, 100% (osmolarity's optimum becomes interior because v2 penalizes disagreement between stated and recipe-implied osmolarity, not because it is otherwise unconstrained), essentially unchanged for temperature (a single degradation-independent term), and 95.5% for pH, with the box-corner rate for pH falling from 35% to 3%. This is the mechanistic prerequisite for any protein-conditional recipe to be learnable at all from simulator-preferred data; it does not by itself establish that real formulations follow this structure, which Sections 3.2–3.3 test directly.
+
+We externally validate v2's population-level, protein-unconditioned pH prediction (justified rather than undermined by Section 3.3's finding that protein identity does not predict real formulation pH) against BioFormBench-Marketed: mean predicted optimal pH across 300 randomly sampled proteins is 5.95 against a real marketed mean of 5.83 (difference 0.12 pH units, bootstrap 95% CI for the difference [−0.07, 0.31], spanning zero). v1's point estimate happens to be numerically closer (5.89, difference 0.06), so this comparison does not discriminate the two simulators on central tendency alone; where they differ sharply is dispersion and buffer preference. Real formulations cluster tightly (SD 0.51) while both simulators' unconditioned populations are far more dispersed (SD ≈ 1.5; Kolmogorov–Smirnov p = 4×10⁻¹⁴ against v2), and v2's top-ranked buffer choices (acetate, tris, succinate) do not include histidine, which real formulations prefer in 55% of cases. We report this plainly rather than selectively: v2 repairs the structural pathologies of Section 2.3 and its pH central tendency is compatible with real data, but it does not reproduce the tight clustering or buffer preference of marketed products — a gap consistent with, and foreshadowing, the platform-convergence result below.
+
+## 3.2 A selection artifact, and how it was caught
+
+![The n=27 vs. n=80 selection artifact. Left: Spearman correlation between Fv isoelectric point and marketed formulation pH, with 95% bootstrap CI, at each sample size. Right: leave-one-protein-out mean absolute error for the same relationship against a no-information baseline; the sequence-based model does not beat the baseline at either scale once evaluated out-of-sample.](figures/fig2_recall.png)
+
+Restricting BioFormBench-Marketed to the 27 molecules with a fully resolved composition (pH, buffer species *and* concentration all parsed) gives an apparently clean result: Fv isoelectric point correlates with chosen formulation pH at ρ = −0.464 (p = 0.015, exact permutation), correctly signed by colloidal theory (formulate away from the pI), bootstrap-stable (95% CI [−0.735, −0.100], excluding zero), and sign-stable under jackknife deletion of any single molecule.
+
+Three checks overturn it. First, of nine sequence features screened against pH, Fv pI is the strongest, and Holm–Bonferroni correction for that screen alone raises its p-value to 0.137. Second, relaxing the requirement to pH-only (justified because pH is the primary target and is stated far more often than a full composition) raises n from 27 to 80 and the correlation collapses to ρ = −0.019 (p = 0.86); it is equally absent, ρ = −0.123 (p = 0.43), in the 44-molecule subset where pH provenance is highest-confidence (extracted from within the composition sentence itself, not a document-level fallback), ruling out extraction-confidence as the explanation for the discrepancy. Third, and most decisively, a five-feature ridge model evaluated by leave-one-protein-out prediction on the n=27 set does *worse* than a no-information baseline (MAE 0.419 vs. 0.393; better than baseline on only 13/27 proteins; paired sign-flip p = 0.73) — description and out-of-sample prediction disagree, which is the operational definition of overfitting a correlation to a small, non-randomly-complete sample.
+
+We report this as a methodological result in its own right. The n=27 subsample is not adversarially selected; it is simply the set of labels whose full composition happened to parse, and an analyst stopping at the first significant, correctly-signed, bootstrap-stable correlation would have reported a real effect. Small, literature-mined pharmaceutical-ML datasets are structurally exposed to this failure mode, and we recommend the three checks above — multiple-comparison correction across any screened feature set, re-testing at maximum available n rather than the most-complete subsample, and LOPO validation before reporting any predictive claim — as a minimum bar.
+
+## 3.3 Platform convergence: what actually predicts marketed formulation
+
+At full power (n=80 molecules, 165 formulations) the marketed design space is narrow: pH has mean 5.90, SD 0.58, with 75% of molecules within ±0.5 of the median; a single buffer (histidine) covers 52% of the 27 molecules with resolved buffer identity (5 distinct species used in total, entropy 1.74 of a possible 2.32 bits); a single surfactant (polysorbate 80) covers 62%. A constant *platform baseline* — always predict the population median pH (6.00) or modal buffer/surfactant — achieves MAE 0.399 pH units and 52%/63% categorical accuracy respectively.
+
+No available covariate beats this baseline under LOPO evaluation (Table 1). A four-feature sequence-only ridge model scores MAE 0.415 (p=0.91 against the platform, one-sided sign-flip); adding route (subcutaneous vs. intravenous) and protein concentration scores MAE 0.410 (p=0.82). Both are numerically *worse* than simply predicting the median. Consistent with this, variance decomposition shows a molecule's own repeated presentations agree far more with each other (mean within-molecule SD 0.081, 37 multi-presentation molecules) than different molecules agree with each other (between-molecule SD 0.581, ratio 7.2): once a formulation is chosen for a specific product, it is highly reproducible across presentations, but which formulation gets chosen in the first place is not explained by any molecule-intrinsic property we can measure from sequence, route, isotype or format.
+
+**Table 1. Leave-one-protein-out prediction of formulation pH, n=80 molecules. No covariate set beats the constant platform baseline.**
+
+| Model | MAE | Δ | p |
+|---|---:|---:|---:|
+| Platform (constant) | 0.399 | — | — |
+| Sequence-only | 0.415 | −0.016 | 0.91 |
+| Sequence + route + conc. | 0.410 | −0.012 | 0.82 |
+
+## 3.4 Generation quality is consistent with, not independent of, these findings
+
+Under the original leave-one-protein-out generative evaluation (9 eligible folds on BioFormBench-Real, Section 2.1), likelihood percentile is 0.797 (bootstrap 95% CI [0.729, 0.865]) but an unconditional (protein-blind) baseline scores comparably (0.872), so this metric is winnable from the marginal recipe distribution alone. Protein-specificity — the model's score when the true protein descriptor is swapped for a mismatched one — is 0.509 (95% CI [0.358, 0.669]), statistically indistinguishable from chance. Exact-match recall@10 is 0.011. Given Section 3.3's finding that protein identity carries no detectable, measurable relationship to real formulation choice at n=80, a model cannot be expected to condition on that relationship at n=9; we regard the weak generation numbers as the predictable consequence of the platform-convergence result, not an independent failure requiring a separate explanation.
+
+## 3.5 In-context training is necessary, independent of the domain result
+
+![In-context conditioning requires in-context-structured training data. (a) No covariate beats the platform baseline for predicting marketed pH. (b) A narrow, conventional design space: a single buffer and surfactant cover the majority of molecules. (c) Per-protein change in likelihood percentile when real few-shot context is supplied at inference: 9/9 proteins improve for a model pretrained on in-context-structured sequences, 0/9 improve for one pretrained on flat triples only (both exact permutation p = 0.0039).](figures/fig3_calibration.png)
+
+Holding the mechanistic pretraining corpus and real evaluation protocol fixed, we vary only whether the pretraining sequences are ICL-structured (Section 2.6), and measure the effect of supplying real in-context examples at inference on *likelihood percentile* — the fraction of random, grammar-valid recipes the model ranks below the true held-out formulation (0.5 is chance). This metric, unlike the stability-classification score used elsewhere, is computed directly from the inference-time prefix and so is the correct one to isolate a context effect on. Supplying real context *improves* it on 9 of 9 held-out proteins for the ICL-trained model (mean +0.027, range +0.001 to +0.081) and *degrades* it on 9 of 9 for a flat-trained model sharing the same pretraining corpus (mean −0.060, range −0.007 to −0.134); both are unanimous in opposite directions, exact permutation p = 0.0039 each. This is an architecture-level finding independent of whether protein-conditional structure exists in this particular formulation domain: a model that has never seen the in-context sequence shape at training time cannot exploit it at inference, and will actively be misled by it.
+
+# 4. Discussion
+
+## 4.1 What this changes for the field
+
+Three results generalize beyond this specific pipeline. First, the dead-slot and interior-argmax diagnostics (Section 2.3) apply to any mechanistic simulator built from stabilizing-only physical terms, a common pattern; we recommend running them before using such a simulator to generate training data for a conditional model. Second, the selection-artifact result (Section 3.2) is a worked example of a failure mode — reporting the most-complete subsample of a literature-mined dataset without correcting for the resulting selection and without out-of-sample validation — that we expect is not unique to this study. Third, the platform-convergence result (Section 3.3) is itself informative for the field's next step: future protein-conditional formulation work should benchmark against a constant platform baseline, and should treat manufacturing/regulatory covariates (route, company, era, indication) as candidate first-class conditioning variables rather than assuming molecular physics alone explains marketed choice.
+
+## 4.2 Why protein-conditional design may still be right, and what would show it
+
+Absence of a detectable signal in *marketed* formulations does not rule out that stability-optimal formulations are protein-conditional; marketed choices are also shaped by manufacturability, prior platform investment, and regulatory precedent, which is exactly what Section 3.3's variance decomposition suggests (formulations are far more reproducible within a molecule than explicable across molecules). The decisive test needs *measured stability outcomes* across many proteins holding formulation fixed, or vice versa — which is precisely what BioFormBench-Real provides at n=13 proteins but not yet at the scale needed for a well-powered version of the test in Section 3.2. Expanding that benchmark, not the marketed-label benchmark, is the highest-value next step for settling the question this paper could not.
+
+## 4.3 Limitations
+
+BioFormBench-Marketed encodes *what was chosen*, not *what performs best*; the two can diverge for exactly the manufacturing/regulatory reasons above. Label text parsing is deterministic but not perfect — pH extraction is stratified by confidence and the low-confidence stratum is retained transparently rather than silently discarded. Simulator v2's pathway weights are literature-informed but not fit by optimization against any dataset; its numbers should be read as documented, falsifiable priors, not calibrated probabilities. BioFormBench-Real, after the provenance purge, supports only 9 leave-one-protein-out folds, too few for a definitive protein-conditionality verdict on stability outcomes specifically (Section 3.2's n=80 test concerns formulation *choice*, a related but distinct question). No wet-lab validation was performed at any stage.
+
+## 4.4 Practical impact
+
+The direct deliverable is not a deployable generative design tool: we show the data does not yet support one, and say so rather than paper over it. The deliverables that are ready to use are (i) two open, provenance-checked benchmarks, the second of a kind (protein sequence linked to marketed formulation at n=80) that, to our knowledge, did not previously exist openly; (ii) an audited and corrected mechanistic simulator with a documented, reusable diagnostic other groups can run against their own simulators; and (iii) an explicit, statistically worked warning about a selection-artifact failure mode plausibly affecting other small pharma-ML studies in this space.
+
+# 5. Conclusion
+
+We set out to audit and strengthen a generative biologics-formulation pipeline, and the audit changed the paper's central claim. A mechanistic simulator commonly used to substitute for scarce real data had two structurally dead recipe slots and corner-collapsing optima in three of four continuous variables; we fixed this. A promising protein-conditional correlation in real marketed-formulation data did not survive scaling from n=27 to n=80 or leave-one-protein-out validation; we report why, in enough statistical detail that the failure mode is reusable as a checklist for other studies. What the data does support, at adequate power, is that marketed antibody formulations converge on a narrow, conventional design space that no measured covariate explains better than a constant baseline — and, independent of this domain, that in-context conditional generation requires in-context-structured pretraining data, demonstrated with a unanimous, exactly-tested effect in both directions. We release both benchmarks, the corrected simulator, and the full statistical pipeline so the open question this paper leaves — whether *stability-optimal*, as opposed to *marketed*, formulation is protein-conditional — can be settled by whoever next scales the real-stability-outcome benchmark past the n=13 proteins available here.
+
+## Ethics and intended use
+
+No formulation recommendations, generated or otherwise, in this paper are intended for clinical or manufacturing use. No human-subjects data was used. FDA label text and Thera-SAbDab sequences are public regulatory and research records, used here for descriptive analysis only.
+
+# Data and code availability
+
+Code, the corrected simulator (`simulator/mechanistic_sim_v2.py`), and a reproduction script for every statistic reported in this paper: [github.com/Maheshbonthada/bioform-lm](https://github.com/Maheshbonthada/bioform-lm)
+
+BioFormBench-Real and BioFormBench-Marketed, with per-row source citations: [huggingface.co/datasets/Sravankumarbonthada/BioFormBench](https://huggingface.co/datasets/Sravankumarbonthada/BioFormBench)
+
+Trained checkpoints (ICL-trained and flat-trained, used for the in-context necessity result): [huggingface.co/Sravankumarbonthada/bioform-lm](https://huggingface.co/Sravankumarbonthada/bioform-lm)
+
+# Conflict of interest
+
+None declared.
+
+# References
+
+1. Dill, K.A. and Eld, E.R. (2008) DLVO theory and protein colloids. *Annu. Rev. Biophys. Chem.*, 37, 289–316.
+2. Arakawa, T. and Timasheff, S.N. (1985) Theory of protein solubility. *Methods Enzymol.*, 114, 49–77.
+3. Arakawa, T. et al. (2007) Formulation design for antibody drugs. *J. Pharm. Sci.*, 100, 1692–1704.
+4. Manning, M.C. et al. (2010) Stability of protein pharmaceuticals: an update. *Pharm. Res.*, 27, 544–575.
+5. Wakankar, A.A. and Borchardt, R.T. (2006) Formulation considerations for proteins susceptible to asparagine deamidation and aspartate isomerization. *J. Pharm. Sci.*, 95, 2321–2336.
+6. Kishore, R.S.K. et al. (2011) Degradation of polysorbates 20 and 80: studies on thermal autoxidation and hydrolysis. *Pharm. Res.*, 28, 1194–1210.
+7. Raybould, M.I.J. et al. (2020) Thera-SAbDab: the Therapeutic Structural Antibody Database. *Nucleic Acids Res.*, 48, D383–D388.
+8. Cock, P.J.A. et al. (2009) Biopython: freely available Python tools for computational molecular biology and bioinformatics. *Bioinformatics*, 25, 1422–1423.
+9. Determination of isoelectric points and relative charge variants of 23 therapeutic monoclonal antibodies (2018) *mAbs*.
+10. Smith, J.D. et al. (2023) SMolLM: scale-efficient language models for molecular generation. In *NeurIPS*.
+11. Svensson, R. et al. (2024) AICMET: amortized in-context mechanistic forecasting. *arXiv*:2408.
+12. Hie, B. et al. (2023) FLAb: antibody foundation model for prediction of developability properties. *Nat. Methods*.

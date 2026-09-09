@@ -45,3 +45,14 @@ RESEARCH_SQUARE_PREPRINT/Manuscript/*.pdf
 # Temporary
 *.tmp
 .cache/
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.log
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Checkpoint variants not matching the plain "checkpoints" name (large; hosted on HF)
+experiments/checkpoints_*/

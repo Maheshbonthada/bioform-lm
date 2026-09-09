@@ -1,304 +1,106 @@
 # BioForm-LM: Quick Start Guide
 
+**Before using this model, read `MODEL_CARD.md`.** The headline
+protein-conditional claim is not supported by the evidence collected so far;
+this guide is for reproducing the paper's real, verified results and for
+building on the corrected pipeline, not for generating formulations to trust.
+
 ## Installation
 
 ```bash
-# Clone repository
 git clone https://github.com/Maheshbonthada/bioform-lm.git
 cd bioform-lm
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Optional: For Hugging Face integration
-pip install huggingface_hub datasets
+pip install huggingface_hub datasets   # for Hub access
 ```
 
-## Load Model & Dataset
+## Load a checkpoint
 
-### Load from Hugging Face Hub
-
-```python
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
-
-# Load model
-model = AutoModelForCausalLM.from_pretrained("Maheshbonthada/bioform-lm")
-tokenizer = AutoTokenizer.from_pretrained("Maheshbonthada/bioform-lm")
-
-# Load BioFormBench dataset
-dataset = load_dataset("Maheshbonthada/BioFormBench")
-```
-
-### Load Locally
+Two checkpoints are released, used together for the paper's in-context
+necessity finding (Section 3.5): one pretrained on in-context-structured
+sequences, one on flat triples only, sharing everything else.
 
 ```python
 import torch
-from bioform_lm.experiments.train import BioFormLM
-from bioform_lm.model.tokenizer import FormulationTokenizer
+from huggingface_hub import hf_hub_download
 
-# Load checkpoint
-checkpoint = torch.load("experiments/checkpoints/checkpoint_epoch_7.pt")
-model = BioFormLM(vocab_size=199, hidden_size=256, num_layers=6, num_heads=8)
-model.load_state_dict(checkpoint['model_state_dict'])
-model.eval()
+from model.bioform_lm import BioFormLM
+from model.tokenizer import FormulationTokenizer
 
-# Initialize tokenizer
 tokenizer = FormulationTokenizer()
+
+def load(filename):
+    ckpt_path = hf_hub_download("Sravankumarbonthada/bioform-lm",
+                                f"checkpoints/{filename}")
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    model = BioFormLM(vocab_size=tokenizer.vocab_size)
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.eval()
+    return model, ckpt
+
+icl_model, icl_ckpt = load("checkpoint_icl_best.pt")
+flat_model, flat_ckpt = load("checkpoint_conditional_best.pt")
+print(icl_ckpt["epoch"], icl_ckpt["val_loss"])
 ```
 
-## Generate Formulation Candidates
-
-### Minimal Example
+## Load the datasets
 
 ```python
-import torch
+import pandas as pd
+from huggingface_hub import hf_hub_download
 
-# Define novel protein
-protein = {
-    "mw": 27000,        # Molecular weight (Da)
-    "pi": 5.8,          # Isoelectric point
-    "tm": 65.0          # Baseline melting temperature (°C)
-}
+real_path = hf_hub_download("Sravankumarbonthada/BioFormBench",
+                            "bioformbench_real.csv", repo_type="dataset")
+marketed_path = hf_hub_download("Sravankumarbonthada/BioFormBench",
+                                "bioformbench_marketed.csv", repo_type="dataset")
 
-# Provide 3-10 real stability measurements as context
-context_examples = [
-    {
-        "buffer": "phosphate",
-        "ph": 6.5,
-        "ionic_strength": 150,
-        "stabilizer": "trehalose",
-        "conc": 50,
-        "stability": 0.92
-    },
-    {
-        "buffer": "histidine",
-        "ph": 6.0,
-        "ionic_strength": 100,
-        "stabilizer": "sucrose",
-        "conc": 100,
-        "stability": 0.88
-    },
-    {
-        "buffer": "acetate",
-        "ph": 5.5,
-        "ionic_strength": 80,
-        "stabilizer": "sorbitol",
-        "conc": 75,
-        "stability": 0.85
-    }
-]
-
-# Generate 50 candidate recipes
-with torch.no_grad():
-    candidates = model.generate(
-        protein=protein,
-        context=context_examples,
-        num_candidates=50,
-        temperature=0.7,
-        top_k=10
-    )
-
-# Get top-5 ranked by physics critic
-top_5_recipes = candidates[:5]
-
-# Print results
-for i, recipe in enumerate(top_5_recipes, 1):
-    print(f"\nRank {i}:")
-    print(f"  Buffer: {recipe['buffer']} (pH {recipe['ph']})")
-    print(f"  Ionic strength: {recipe['ionic_strength']} mM")
-    print(f"  Stabilizer: {recipe['stabilizer']} ({recipe['conc']}% w/v)")
-    print(f"  Predicted stability: {recipe['predicted_stability']:.3f}")
+bfb_real = pd.read_csv(real_path)          # 49 rows, 13 proteins, literature-sourced
+bfb_marketed = pd.read_csv(marketed_path)  # 165 rows, 80 approved antibodies, FDA-label-sourced
 ```
 
-### Full Workflow with Evaluation
+## Reproduce the paper's key results
 
-```python
-from bioform_lm.evaluation.protocols import LOPOProtocol
-from bioform_lm.evaluation.metrics import Recall, Calibration, Diversity
-from datasets import load_dataset
-
-# Load BioFormBench
-dataset = load_dataset("Maheshbonthada/BioFormBench")
-
-# Initialize evaluation protocol
-lopo = LOPOProtocol(
-    dataset=dataset,
-    proteins=["protein_1_igg", "protein_2_scfv", "protein_3_fab"]
-)
-
-# Run leave-one-protein-out evaluation
-results = lopo.evaluate(
-    model=model,
-    num_context_examples=3,
-    num_candidates_to_generate=50
-)
-
-# Metrics
-print(f"Recall@10: {results['recall_at_10']:.3f}")
-print(f"Diversity (MPD): {results['diversity']:.3f}")
-print(f"Calibration (Spearman r): {results['calibration']:.3f}")
-print(f"Coverage: {results['coverage']:.1f}%")
-```
-
-## Training from Scratch
-
-### Generate Synthetic Data
-
-```python
-from bioform_lm.data.synthetic_generator import SyntheticGenerator
-
-# Initialize simulator
-generator = SyntheticGenerator(
-    num_samples=100000,
-    seed=42
-)
-
-# Generate synthetic corpus
-synthetic_data = generator.generate()
-synthetic_data.to_csv("data/synthetic_training_data.csv", index=False)
-synthetic_data.to_parquet("data/synthetic_training_data.parquet")
-```
-
-### Train Model
-
-```python
-from bioform_lm.experiments.train import train
-
-# Training config
-config = {
-    "model": {
-        "vocab_size": 199,
-        "hidden_size": 256,
-        "num_layers": 6,
-        "num_heads": 8,
-        "intermediate_size": 1024,
-        "max_position_embeddings": 64,
-        "dropout": 0.1
-    },
-    "training": {
-        "batch_size": 32,
-        "learning_rate": 1e-4,
-        "num_epochs": 15,
-        "device": "cuda",
-        "checkpoint_dir": "experiments/checkpoints",
-        "log_interval": 100
-    }
-}
-
-# Train
-train(config=config, data_path="data/synthetic_training_data.parquet")
-```
-
-## Baselines
-
-Compare against predictive models:
-
-```python
-from bioform_lm.evaluation.baselines import RandomForest, SVM
-
-# Train baselines on synthetic data
-rf = RandomForest()
-svm = SVM()
-
-rf.fit(X_train, y_train)
-svm.fit(X_train, y_train)
-
-# Evaluate
-rf_recall = rf.score(X_test, y_test)
-svm_recall = svm.score(X_test, y_test)
-
-print(f"RandomForest Recall@10: {rf_recall:.3f}")
-print(f"SVM Recall@10: {svm_recall:.3f}")
-print(f"BioForm-LM Recall@10: 0.167")
-```
-
-## Input Specifications
-
-### Protein Descriptor Format
-
-```json
-{
-  "mw": 27000,              // Molecular weight (Daltons) [10000-150000]
-  "pi": 5.8,                // Isoelectric point [4.0-9.0]
-  "tm": 65.0                // Baseline Tm (°C) [50-80]
-}
-```
-
-### Formulation Recipe Format
-
-```json
-{
-  "buffer": "phosphate",    // Options: histidine, phosphate, acetate, citrate
-  "ph": 6.5,                // [4.5-7.5]
-  "ionic_strength": 150,    // mM [50-300]
-  "stabilizer": "trehalose",// Options: trehalose, sucrose, sorbitol, glycerol
-  "conc": 50,               // % w/v [0-200]
-  "stability": 0.92         // [0.0-1.0] for context examples
-}
-```
-
-### Output Format
-
-Each generated candidate includes:
-
-```json
-{
-  "buffer": "phosphate",
-  "ph": 6.5,
-  "ionic_strength": 150,
-  "stabilizer": "trehalose",
-  "conc": 50,
-  "predicted_stability": 0.91,
-  "confidence": 0.85,
-  "rank": 1
-}
-```
-
-## Troubleshooting
-
-### GPU Memory Error
-```python
-# Use CPU instead
-model.to("cpu")
-candidates = model.generate(..., device="cpu")
-```
-
-### Slow Generation
-```python
-# Reduce number of candidates
-candidates = model.generate(num_candidates=10)  # Default: 50
-
-# Use smaller temperature (more greedy)
-candidates = model.generate(temperature=0.1)
-```
-
-### Model Not Found
 ```bash
-# Download checkpoint manually
-wget https://huggingface.co/Maheshbonthada/bioform-lm/resolve/main/checkpoint_epoch_7.pt
+# Simulator audit + correction
+python scripts/diagnose_simulator.py
+python scripts/diagnose_v2.py
+
+# The n=27 -> n=80 selection artifact (Section 3.2 of the paper)
+python scripts/analyze_sequence_conditionality.py
+python scripts/validate_conditionality.py
+
+# Platform-convergence result (Section 3.3)
+python scripts/analyze_platform_convergence.py
+
+# Original LOPO generative evaluation
+python scripts/evaluate_real.py --checkpoint experiments/checkpoints_conditional/best.pt
+
+# ICL-necessity comparison (Section 3.5): run each checkpoint with and without
+# real context, compare likelihood_percentile per protein
+python scripts/evaluate_real.py --checkpoint experiments/checkpoints_icl/best.pt --shots 2 --out results/icl_with.json
+python scripts/evaluate_real.py --checkpoint experiments/checkpoints_icl/best.pt --no-context --out results/icl_without.json
 ```
 
-## Citation
+## Generating candidate recipes (for exploration, not for use as-is)
 
-If you use BioForm-LM, please cite:
+```python
+protein_desc = {"mw_kda": 148.0, "pi": 8.5, "tm_baseline_c": 72.0}
+prefix = [tokenizer.CLS_ID] + tokenizer.encode_protein(**protein_desc) + [tokenizer.SEP_ID]
+prefix_t = torch.tensor(prefix, dtype=torch.long)
 
-```bibtex
-@article{kumar2026bioformlm,
-  title={BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding},
-  author={Kumar, Bonthada Sravan},
-  journal={Research Square (Preprint)},
-  year={2026},
-  doi={10.21203/rs.[DOI]}
-}
+candidates = icl_model.generate(prefix_t, num_candidates=50, temperature=1.0)
+scores = icl_model.score_stability(
+    torch.stack([torch.cat([prefix_t[:5], c]) for c in candidates])
+)
+top5 = candidates[scores.argsort(descending=True)[:5]]
 ```
 
-## Support
+Treat `top5` as computational hypotheses only. Per the model card and paper,
+protein-conditional specificity in this pipeline is not distinguishable from
+chance (0.509, 95% CI [0.358, 0.669]) at current sample sizes, so do not expect
+`protein_desc` to meaningfully steer the output toward a molecule-specific
+optimum yet.
 
-- **Issues:** https://github.com/Maheshbonthada/bioform-lm/issues
-- **Discussions:** https://github.com/Maheshbonthada/bioform-lm/discussions
-- **Email:** sravansaijohn@gmail.com
+## Contact
 
----
-
-**Last Updated:** September 7, 2026
+Bonthada Sravan Kumar — sravansaijohn@gmail.com

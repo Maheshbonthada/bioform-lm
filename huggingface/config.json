@@ -1,0 +1,18 @@
+{
+  "model_type": "bioform-lm",
+  "architecture": "decoder-only-transformer",
+  "vocab_size": 199,
+  "hidden_size": 256,
+  "num_layers": 6,
+  "num_heads": 8,
+  "intermediate_size": 1024,
+  "max_position_embeddings": 64,
+  "dropout": 0.1,
+  "num_parameters": 4892507,
+  "checkpoints": {
+    "icl_trained": "checkpoints/checkpoint_icl_best.pt",
+    "flat_trained": "checkpoints/checkpoint_conditional_best.pt"
+  },
+  "framework": "pytorch",
+  "note": "Plain PyTorch state dict, class model.bioform_lm.BioFormLM. Not loadable via transformers AutoModel; see USAGE.md."
+}

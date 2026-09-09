@@ -1,187 +1,129 @@
-# BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding
+# BioForm-LM: What Determines a Biologic's Formulation?
 
-**Author:** Bonthada Sravan Kumar (Independent Researcher, Genes Project)  
-**Status:** Preprint submitted to Research Square  
+**Author:** Bonthada Sravan Kumar (Independent Researcher)
 **License:** MIT
+
+## Read this first
+
+This repo previously claimed a working protein-conditional generative
+formulation-design system, with results including recall@10 = 0.167 and
+perfect calibration (r = 1.0) on a held-out protein. Those numbers were never
+real: the evaluation code never called the model (it fell through to
+`np.random`), and the benchmark it ran against silently dropped 49 of 67 real
+rows to a CSV parser bug while keeping 18 unsourced placeholder rows. Both bugs
+are now fixed. The corrected numbers, the audit that found the bugs, and what
+the pipeline actually does and does not demonstrate are in the paper below —
+please read `papers/BioForm-LM_Main_Paper.pdf`, not the historical `.md` status
+files elsewhere in this repo, which are dated progress logs from before the
+audit and are kept only as a record of how the project got here.
+
+**The honest summary:** the central claim (a protein's identity determines its
+formulation, learnable well enough to generate novel formulations for a new
+protein) is not supported by the evidence collected so far, at the sample
+sizes available. What survives, verified: two open benchmarks (one of them
+new: 165 marketed formulations for 80 real approved antibodies with real
+sequences), a documented and fixed structural flaw in a common mechanistic
+simulator design pattern, a rigorous demonstration of how an n=27 selection
+artifact can look like a real, correctly-signed, bootstrap-stable effect and
+not be one, a well-powered negative result (formulation choice tracks a
+constant "platform" baseline, not protein sequence), and an unrelated but real
+architecture finding (in-context conditioning requires in-context-structured
+pretraining, p = 0.0039 in both directions).
 
 ## Overview
 
-BioForm-LM is the **first generative system for biologics formulation design** that combines:
-- **Mechanistic Simulator** (DLVO + Lumry-Eyring physics) for synthetic pretraining
-- **In-Context Generative Transformer** for few-shot adaptation to novel proteins
-- **Physics-Informed Critic** for best-of-N decoding and calibration
-
-### Key Results
-- ? **Perfect calibration** on Protein 2 (Spearman r = 1.0, p = 0.0) with only 3 in-context examples
-- ? **35.3% formulation-space coverage** (4.7� higher than random sampling)
-- ? **Novel architecture** combining sim-to-real + in-context learning + physics critic
-- ? **BioFormBench**: Open benchmark of 67 real biologics formulations
+Three-stage pipeline:
+- **Mechanistic simulator** (`simulator/mechanistic_sim.py` = v1, audited;
+  `simulator/mechanistic_sim_v2.py` = corrected) for synthetic pretraining data.
+- **In-context generative transformer** (`model/bioform_lm.py`) for few-shot
+  adaptation to novel proteins.
+- **Stability-classification head** for best-of-N reranking.
 
 ## Installation
 
 ```bash
-git clone https://github.com/[YOUR-GITHUB]/bioform-lm.git
+git clone https://github.com/Maheshbonthada/bioform-lm.git
 cd bioform-lm
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## Reproducing the paper's results
 
-### Generate Synthetic Training Data
 ```bash
-python data/synthetic_generator.py 100000
+# Simulator audit (v1 dead slots / corner-seeking optima) and v2 correction
+python scripts/diagnose_simulator.py
+python scripts/diagnose_v2.py
+
+# External, out-of-sample validation of v2 against real marketed formulations
+python scripts/validate_v2_external.py
+
+# The n=27 -> n=80 selection artifact and its resolution
+python scripts/analyze_sequence_conditionality.py
+python scripts/validate_conditionality.py
+
+# Platform-convergence result (no covariate beats a constant baseline)
+python scripts/analyze_platform_convergence.py
+
+# BioFormBench-Marketed construction from scratch (FDA labels + Thera-SAbDab)
+python scripts/harvest_labels_1_enumerate.py
+python scripts/harvest_labels.py
+python scripts/parse_labels.py
+python scripts/compute_protein_descriptors.py
+
+# Original LOPO generative evaluation on BioFormBench-Real
+python scripts/evaluate_real.py --checkpoint experiments/checkpoints_conditional/best.pt
+
+# ICL-necessity comparison (requires both checkpoints; see Hugging Face model repo)
+python scripts/evaluate_real.py --checkpoint experiments/checkpoints_icl/best.pt --out results/icl_with.json
+python scripts/evaluate_real.py --checkpoint experiments/checkpoints_icl/best.pt --no-context --out results/icl_without.json
 ```
 
-### Train Model
-```bash
-python experiments/train.py --phase synthetic --num_samples 100000 --device cuda
-```
+## Data and model availability
 
-### Evaluate on BioFormBench (Leave-One-Protein-Out)
-```bash
-python scripts/run_full_pipeline.py
-```
+- **Datasets** (BioFormBench-Real, 49 rows; BioFormBench-Marketed, 165 rows /
+  80 sequenced antibodies): [huggingface.co/datasets/Sravankumarbonthada/BioFormBench](https://huggingface.co/datasets/Sravankumarbonthada/BioFormBench)
+- **Model checkpoints** (ICL-trained and flat-trained, used for the
+  in-context-necessity result): [huggingface.co/Sravankumarbonthada/bioform-lm](https://huggingface.co/Sravankumarbonthada/bioform-lm)
+- **Paper:** `papers/BioForm-LM_Main_Paper.pdf` (two-column) or
+  `papers/BioForm-LM_ResearchSquare.md` / `.docx` (single-column, for preprint
+  submission).
 
-### Baselines
-```bash
-python evaluation/baselines.py
-```
-
-## Project Structure
+## Project structure
 
 ```
 bioform-lm/
-+-- model/               # Transformer + Tokenizer + Critic
-+-- simulator/           # Mechanistic simulator (DLVO + Lumry-Eyring)
-+-- data/                # Synthetic data generation + BioFormBench
-+-- evaluation/          # Metrics, protocols, baselines
-+-- experiments/         # Training pipeline
-+-- scripts/             # CLI tools (train, evaluate, analyze)
-+-- tests/               # Unit tests (pytest)
-+-- papers/              # Manuscript (PDF + LaTeX)
-+-- README.md            # This file
+├── model/               # Transformer (bioform_lm.py) + tokenizer
+├── simulator/           # Mechanistic simulator: v1 (audited) and v2 (corrected)
+├── data/                # BioFormBench-Real/Marketed CSVs, provenance, raw labels
+├── evaluation/          # Benchmark loader, metrics, statistics
+├── experiments/         # Checkpoints (gitignored; see Hugging Face)
+├── scripts/             # Every analysis and figure in the paper, one script each
+├── papers/              # Manuscript (LaTeX + Markdown), make_figures.py
+├── results/             # Result JSONs (gitignored; regenerate via scripts/)
+└── README.md            # This file
 ```
 
-## Key Features
+## Ethics and intended use
 
-### 1. Mechanistic Simulator
-- Physics-based modeling via DLVO theory
-- Lumry-Eyring kinetics for aggregation
-- Generates 100K+ synthetic training triples
-- Located in: `simulator/mechanistic_sim.py`
-
-### 2. Formulation Tokenizer
-- 199-token vocabulary: buffer species, pH, ionic strength, stabilizers, protein descriptors
-- Located in: `model/tokenizer.py`
-
-### 3. In-Context Learning
-- Amortized adaptation to novel proteins
-- 3-10 real examples ? diverse recipe candidates
-- No weight updates at inference
-- Located in: `experiments/train.py`
-
-### 4. Physics-Informed Critic
-- Lightweight MLP distilled from simulator
-- Best-of-N decoding for recipe ranking
-- Closes sim-to-real gap
-- Located in: `model/critic.py`
-
-## Dataset: BioFormBench
-
-**Composition:**
-- 67 total formulations curated from literature
-- 18 formulations in LOPO evaluation (3 proteins � 6 each)
-- Features: protein descriptors (MW, pI, Tm), formulation recipe, stability outcome
-
-**Access:**
-- `data/bioformbench_extracted_real_*.csv` (real formulations)
-- Expanding via systematic literature mining
-
-## Evaluation Metrics
-
-- **Recall@k**: Match rate against known-good recipes
-- **Diversity (MPD)**: Mean pairwise distance (recipe dissimilarity)
-- **Calibration (Spearman r)**: Predicted vs. actual stability correlation
-- **Coverage**: % of formulation space explored
-- **Ablations**: Impact of in-context learning and physics critic
-
-### Results Summary
-
-| Metric | Value | Interpretation |
-|--------|-------|---|
-| Recall@10 | 0.167 | 1-2 matches per fold (diverse generation, not memorization) |
-| Diversity (MPD) | 0.404 | High pairwise distance; no mode collapse |
-| Calibration (r) | 0.267 � 0.660 | Protein-specific adaptation (-0.6 to +1.0) |
-| Coverage | 35.3% � 0.89% | 4.7� higher than random |
-
-**Per-Protein Breakdown:**
-- **Protein 1 (IgG)**: Exploratory regime (r = -0.60), high diversity
-- **Protein 2 (scFv)**: Perfect calibration (r = 1.0, p = 0.0) ?
-- **Protein 3 (Fab)**: Moderate calibration (r = 0.40)
-
-## Novelty Claims
-
-This is the first work to:
-1. **Apply generative LMs to biologics formulation design** (prior work only predicts/ranks)
-2. **Combine mechanistic simulator + in-context transformer + physics critic** for sim-to-real transfer
-3. **Demonstrate adaptive few-shot generation under extreme data scarcity** (Protein 2: r = 1.0 with 3 examples)
-4. **Release BioFormBench**, an open benchmark for generative formulation design
-
-## Running Tests
-
-```bash
-pytest tests/ -v
-pytest tests/test_simulator.py -v    # Mechanistic simulator (25 tests)
-pytest tests/test_evaluation.py -v   # Metrics and protocols
-pytest tests/test_baselines.py -v    # Baseline implementations
-```
-
-## Limitations & Future Work
-
-### Current Limitations
-- Evaluation scope: 18 formulations (3 proteins) in LOPO due to data scarcity
-- Simulator uses DLVO + Lumry-Eyring (simplified; full MD not integrated)
-- No wet-lab validation (computational hypotheses for screening)
-- Only 3/5 collected proteins had sufficient in-context examples
-
-### Future Directions
-- Scale BioFormBench from 67 ? 200+ formulations (systematic literature mining)
-- Expand LOPO to 8-10 proteins and 50+ formulations
-- Integrate full molecular dynamics simulator
-- Multi-task learning: stability + immunogenicity + manufacturability
-- Wet-lab validation of top-3 generated recipes
+Generated formulations are computational hypotheses only, never clinical or
+manufacturing recommendations, and the evidence in this repo is a reason for
+additional scrutiny before any wet-lab use, not a substitute for it. No
+human-subjects data was used. FDA label text and Thera-SAbDab sequences used to
+build BioFormBench-Marketed are public regulatory and research records, used
+here for descriptive analysis only.
 
 ## Citation
 
-If you use BioForm-LM or BioFormBench, please cite:
-
 ```bibtex
 @article{kumar2026bioformlm,
-  title={BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding},
+  title={What Determines a Biologic's Formulation? Two Open Benchmarks, an
+         Audited Mechanistic Simulator, and a Well-Powered
+         Platform-Convergence Result},
   author={Kumar, Bonthada Sravan},
-  journal={Research Square (Preprint)},
-  year={2026},
-  doi={10.21203/rs.[DOI-HERE]}
+  year={2026}
 }
 ```
 
-## License
-
-MIT License - See [LICENSE](LICENSE) file
-
 ## Contact
 
-**Bonthada Sravan Kumar**  
-Email: sravansaijohn@gmail.com  
-Project: Genes (Independent AI Research)
-
-## Acknowledgments
-
-- BioFormBench curation enabled by open-access formulation screening literature
-- Mechanistic simulator based on DLVO theory and Lumry-Eyring kinetics
-- Transformer architecture inspired by AICMET (in-context mechanistic forecasting)
-
----
-
-**Last Updated:** September 7, 2026  
-**Status:** ? Preprint Ready | ?? Peer Review Pending
+Bonthada Sravan Kumar — sravansaijohn@gmail.com

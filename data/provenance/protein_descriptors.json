@@ -1,0 +1,35 @@
+{
+  "_README": "Protein descriptors for BioFormBench, each with an explicit source. Values marked source 'PLACEHOLDER' were defaults in bioformbench_v2 and are NOT literature-derived; they are corrected here where a primary source exists and flagged unknown where none does. Nothing in this file is inferred or invented.",
+  "Trastuzumab": {
+    "mw_kda": {"value": 148.0, "source": "DrugBank/INN, IgG1 kappa"},
+    "pi": {"value": 9.03, "source": "cIEF, Determination of isoelectric points of 23 therapeutic mAbs", "note": "benchmark v2 had 7.2 (placeholder)"},
+    "tm_fab_c": {"value": 82.2, "source": "PMC11572152 reference condition"},
+    "tm_ch2_c": {"value": 71.6, "source": "PMC11572152 reference condition"}
+  },
+  "Omalizumab": {
+    "mw_kda": {"value": 149.0, "source": "DrugBank/INN, IgG1 kappa"},
+    "pi": {"value": null, "source": "UNKNOWN - not reported in PMC11572152; no verified value yet"},
+    "tm_fab_c": {"value": 85.5, "source": "PMC11572152 reference condition"},
+    "tm_ch2_c": {"value": 71.6, "source": "PMC11572152 reference condition"}
+  },
+  "Adalimumab": {
+    "mw_kda": {"value": 148.0, "source": "DrugBank/INN, IgG1 kappa"},
+    "pi": {"value": 8.5, "source": "icIEF main isoform; charge isoforms 8.0-9.3 (PMC5240642, PMC7272391)", "note": "benchmark v2 had 7.2 (placeholder)"},
+    "tm_ch2_c": {"value": 72.0, "source": "PMC10459033"}
+  },
+  "bsAb_A": {
+    "mw_kda": {"value": null, "source": "UNKNOWN - not stated in PMC11343937; Fab-scFv knob-into-hole format"},
+    "pi": {"value": 8.52, "source": "PMC11343937, stated directly", "note": "benchmark v2 had 6.9 (placeholder)"},
+    "tm_c": {"value": null, "source": "UNKNOWN - not reported in PMC11343937"}
+  },
+  "PGT121": {
+    "mw_kda": {"value": 150.0, "source": "PMC9854243, stated as typical mAb MW"},
+    "pi": {"value": null, "source": "UNKNOWN - not stated in PMC9854243"},
+    "tm_c": {"value": null, "source": "UNKNOWN - not reported in PMC9854243"}
+  },
+  "A33_Fab_C226S": {
+    "mw_kda": {"value": null, "source": "UNKNOWN - not stated in PMC11539065; benchmark v2 recorded 27.0 kDa, which is implausible for a Fab (~47-48 kDa) and is unverified"},
+    "pi": {"value": null, "source": "UNKNOWN - not stated in PMC11539065"},
+    "tm_c": {"value": 77.1, "source": "PMC11539065, 20 mM citrate pH 4.5, 50 mM ionic strength, 0 mg/mL glycine"}
+  }
+}

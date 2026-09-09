@@ -1,5 +1,5 @@
 ---
-library_name: transformers
+library_name: pytorch
 tags:
   - drug-discovery
   - biologics
@@ -9,175 +9,155 @@ tags:
   - mechanistic-simulator
 license: mit
 datasets:
-  - Maheshbonthada/BioFormBench
+  - Sravankumarbonthada/BioFormBench
 language: en
 ---
 
-# BioForm-LM: Generative Design of Biologics Formulations
+# BioForm-LM: an audited generative formulation-design pipeline
 
-## Model Description
+## Read this first
 
-**BioForm-LM** is the first generative system for de novo biologics formulation design combining mechanistic simulation, in-context few-shot learning, and physics-informed decoding.
+This checkpoint's headline architectural claim (protein-conditional generative
+formulation design) is **not supported** by the evidence collected so far. That
+finding, and how it was reached, is the actual contribution — see the companion
+paper ("What Determines a Biologic's Formulation?") for the full analysis. This
+card describes what the model demonstrably does and does not do; it does not
+repeat an earlier draft's fabricated performance table.
 
-### Architecture
+## What changed from the original release
+
+An earlier version of this card reported recall@10 = 0.167, perfect calibration
+(r = 1.0) on a held-out protein, and 4.7x formulation-space coverage versus
+random sampling. Those numbers came from an evaluation path that never actually
+called the model (verified: the code path fell through to `np.random` before
+reaching a model forward pass) and from a benchmark that, at the time, silently
+dropped 49 of 67 rows via a CSV parser bug and kept 18 unsourced placeholder
+rows. Both defects are now fixed, and the numbers below are freshly measured,
+model-produced, and reproducible from `scripts/evaluate_real.py`.
+
+## Architecture (unchanged)
 
 Three-stage pipeline:
 
-1. **Mechanistic Simulator (Stage 1)**
-   - DLVO theory: colloidal forces, electrostatic interactions, Van der Waals effects
-   - Lumry-Eyring kinetics: temperature-dependent protein aggregation
-   - Generates 100K+ synthetic (protein descriptor, formulation recipe) → stability outcome triples
-   - Used for synthetic pretraining without requiring wet-lab data
+1. **Mechanistic simulator.** DLVO colloidal theory + Lumry-Eyring aggregation
+   kinetics generate synthetic (protein, recipe) to stability triples for
+   pretraining. An audit found the original version (v1) has two structurally
+   dead recipe slots (buffer species/concentration change predicted stability
+   by exactly 0.0) and corner-collapsing optima in 3 of 4 continuous variables
+   (100% monotone for ionic strength, osmolarity, temperature). `v2`
+   (`simulator/mechanistic_sim_v2.py`) adds nine literature-anchored competing
+   degradation pathways that fix this; see the paper for the diagnostic.
+2. **In-context generative transformer.** Decoder-only, 6 layers, 8 heads, 256
+   hidden dim, 4.9M parameters, 199-token vocabulary. Pretrained on the
+   synthetic corpus; adapts to a novel protein from 2-10 real measurements
+   supplied in context, no gradient update.
+3. **Stability-classification head.** Scores a full (protein, recipe) sequence
+   for a discretized stability bin; used for best-of-N reranking.
 
-2. **In-Context Generative Transformer (Stage 2)**
-   - Decoder-only transformer (6 layers, 8 heads, 256 hidden dim)
-   - Vocabulary: 199 tokens (buffer species, pH, ionic strength, stabilizers, protein descriptors)
-   - Pretrained on synthetic corpus from Stage 1
-   - Adapts to novel proteins via in-context learning (3-10 real examples, no gradient updates)
-   - Generates candidate formulation recipes autoregressively
+## Real, verified results (BioFormBench-Real, 9 LOPO folds)
 
-3. **Physics-Informed Critic (Stage 3)**
-   - Lightweight 2-layer MLP distilled from mechanistic simulator
-   - Best-of-N decoding: scores N generated candidates, returns top-ranked recipes
-   - Closes sim-to-real gap by pulling recipes toward physically plausible regions
-   - Trained on held-out synthetic data to minimize MSE vs simulator
+| Metric | Value | 95% CI | Chance |
+|---|---|---|---|
+| Likelihood percentile | 0.797 | [0.729, 0.865] | 0.5 |
+| ...unconditional baseline | 0.872 | - | 0.5 |
+| Protein specificity | 0.509 | [0.358, 0.669] | 0.5 |
+| Recall@10 (exact match) | 0.011 | [0.000, 0.033] | - |
+| Calibration (Spearman rho) | +0.280 | [-0.405, +0.964] | 0 |
 
-### Training Data
+**Read this table correctly.** Likelihood percentile looks good in isolation
+(0.797) until compared against a protein-blind unconditional model, which
+scores *higher* (0.872) — meaning that metric rewards learning the marginal
+recipe distribution, not protein-conditional structure. Protein specificity
+(swap the true protein descriptor for a foreign one; does the model still
+prefer the real recipe?) is the metric that actually isolates conditional
+knowledge, and it sits at 0.509, statistically indistinguishable from chance
+(95% CI spans 0.5). Given a companion analysis on 80 real approved antibodies
+found no detectable relationship between protein sequence and marketed
+formulation choice either (see paper Section 3.3), this is not a surprising
+model failure so much as the predictable consequence of conditioning on a
+relationship that may not be there to learn at the sample sizes available.
 
-**Synthetic pretraining corpus:**
-- 100K+ samples generated from mechanistic simulator
-- Protein descriptors: MW [10-150 kDa], pI [4-9], Tm baseline
-- Formulation recipes: buffer species (histidine, phosphate, acetate, citrate), pH [4.5-7.5], ionic strength [50-300 mM], stabilizers (trehalose, sucrose, sorbitol, glycerol)
-- Outcomes: predicted stability score ∈ [0, 1]
+## A finding that IS real and reproducible: ICL requires ICL-structured training
 
-**Real benchmark (BioFormBench):**
-- 67 total formulations curated from literature
-- 18 formulations in LOPO evaluation (3 proteins × 6 each)
-- Source: literature DSF (differential scanning fluorimetry), SEC (size-exclusion chromatography), turbidity measurements
-- Proteins: P1 (IgG, 150 kDa), P2 (scFv, 27 kDa), P3 (Fab, 50 kDa)
+Holding the pretraining corpus fixed, a model trained on in-context-structured
+sequences shows a real, unanimous effect of real context on likelihood
+percentile (9/9 held-out proteins improve, mean +0.027), while a model trained
+only on flat triples shows the opposite (9/9 proteins get worse, mean -0.060).
+Both are exact permutation p = 0.0039. This is an architecture-level result,
+verified by rerunning `scripts/evaluate_real.py` with and without context for
+both checkpoints (`experiments/checkpoints_icl/best.pt` vs
+`experiments/checkpoints_conditional/best.pt`) — not a domain-specific claim
+about formulation design.
 
-## Model Performance
+## Intended use
 
-### Main Results (Leave-One-Protein-Out Evaluation)
+**What this model is not, currently:** a validated tool for proposing
+formulations for a novel protein. The evidence above does not support that use.
 
-| Metric | Value | Interpretation |
-|--------|-------|---|
-| **Recall@10** | 0.167 | 1-2 exact matches per fold (diverse generation, not memorization) |
-| **Diversity (MPD)** | 0.404 ± 0.012 | High pairwise distance; recipes don't collapse to single mode |
-| **Calibration (Spearman r)** | 0.267 ± 0.660 | Protein-specific adaptation; range: -0.60 to +1.0 |
-| **Formulation Space Coverage** | 35.3% ± 0.89% | 4.7× higher density than random sampling (~7.5%) |
+**What it is useful for:** a reference implementation of the sim-to-real +
+in-context architecture, a demonstration of the ICL-training-necessity finding
+above (independent of the formulation domain), and a component to build on if
+the underlying data problem (Discussion, companion paper) is addressed —
+specifically, real *measured stability outcomes* across many proteins, not just
+the 13 currently available in BioFormBench-Real, or a richer protein
+representation than the current 3 scalar descriptors.
 
-### Per-Protein Breakdown
+## Limitations
 
-| Protein | Type | Recall@10 | Calibration (r) | p-value | Regime |
-|---------|------|-----------|---|---------|--------|
-| **P1** | IgG (150 kDa) | 0.50 | -0.60 | 0.400 | Exploratory (high diversity) |
-| **P2** | scFv (27 kDa) | 0.00 | **1.00** | **0.000** | ✅ **PERFECT** (flawless adaptation) |
-| **P3** | Fab (50 kDa) | 0.00 | 0.40 | 0.600 | Moderate adaptation |
+1. BioFormBench-Real supports only 9 LOPO folds; too few for a definitive
+   protein-conditionality verdict on stability outcomes.
+2. Protein descriptors used by this checkpoint are 3 quantized scalars (MW, pI,
+   baseline Tm), not full sequence. A follow-up analysis using real VH/VL
+   sequence-derived descriptors on 80 approved antibodies (BioFormBench-Marketed)
+   also found no detectable protein effect on marketed formulation choice, which
+   argues the null result is not merely an artifact of the impoverished
+   descriptor, but this has not been tested with sequence descriptors fed
+   directly into this model architecture.
+3. No wet-lab validation at any stage.
+4. Simulator v2's pathway weights are literature-informed, round numbers, not
+   fit by optimization against any dataset — treat outputs as documented,
+   falsifiable priors, not calibrated probabilities.
 
-**Key Finding:** Protein 2 achieves perfect calibration (r = 1.0, p = 0.0) using only 3 in-context examples, proving the model learns protein-specific patterns from minimal real data.
+## Training details
 
-### Ablation Study
+- Framework: PyTorch, bf16 autocast, TF32 matmul
+- Optimizer: AdamW, OneCycleLR
+- Loss: joint next-recipe-token CE (masked to simulator-preferred rows) + stability-bin CE
+- Hardware: RTX 3050 (8GB) + 28-core CPU for parallel data generation/encoding
+- Sequence length: 13 tokens (5 protein-descriptor prefix + 8 recipe slots)
 
-Both architectural components are statistically significant:
+## Ethical considerations
 
-- **No in-context learning** (synthetic-only): Recall@10 drops 67% (0.167 → 0.055)
-- **No physics critic** (no best-of-N guidance): Calibration drops 33%, recall decreases to 0.112
-- **Synthetic-only baseline**: Recall@10 = 0.050 (-70% vs full model)
+Generated formulation recipes are computational hypotheses only, and the
+evidence in this card is a reason for additional scrutiny before wet-lab
+screening, not a substitute for it. Do not use outputs for therapeutic
+decisions.
 
-## Intended Use
-
-### Primary Use Case
-Generate de novo biologics formulation hypotheses (buffer pH, ionic strength, stabilizer choices) for a novel protein based on 3-10 real stability measurements.
-
-### Workflow
-1. **Input:** Protein descriptors (MW, pI, baseline Tm) + 3-10 real formulation stability measurements
-2. **Process:** In-context adaptation (no retraining) + physics-informed decoding
-3. **Output:** N candidate formulation recipes ranked by predicted stability
-4. **Validation:** Computational hypotheses for wet-lab screening (not clinical deployment)
-
-### Example Usage
-```python
-# Load model and context examples
-model = load_bioform_lm(checkpoint="checkpoint_epoch_7.pt")
-protein = {"mw": 27000, "pi": 5.2, "tm": 65.0}  # scFv example
-context_examples = [
-    {"buffer": "phosphate", "ph": 6.5, "ionic_strength": 150, "stabilizer": "trehalose", "conc": 50, "stability": 0.92},
-    {"buffer": "histidine", "ph": 6.0, "ionic_strength": 100, "stabilizer": "sucrose", "conc": 100, "stability": 0.88},
-    {"buffer": "acetate", "ph": 5.5, "ionic_strength": 80, "stabilizer": "sorbitol", "conc": 75, "stability": 0.85}
-]
-
-# Generate candidates
-candidates = model.generate(protein, context=context_examples, num_candidates=50)
-
-# Return top-5 ranked by physics critic
-top_5 = candidates[:5]
-```
-
-### Limitations
-
-1. **Evaluation scope:** 18 formulations (3 proteins) in LOPO due to extreme data scarcity. Scaling to 200+ formulations and 8-10 proteins is planned via systematic literature mining.
-
-2. **Simulator fidelity:** DLVO + Lumry-Eyring uses established theory but simplified assumptions. Full molecular dynamics not yet integrated. Generated recipes are computational hypotheses, not clinical recommendations.
-
-3. **No wet-lab validation:** Model predictions unvalidated experimentally. Protein 2's perfect calibration (r = 1.0) is promising but requires wet-lab confirmation.
-
-4. **Generalization:** Only 3/5 collected proteins had sufficient in-context examples. Future: larger, more diverse protein set.
-
-## Training Details
-
-- **Framework:** PyTorch
-- **Optimizer:** Adam (lr=1e-4)
-- **Loss:** Cross-entropy (next-token prediction)
-- **Hardware:** 2× RTX 3050 (8 GB VRAM each) via DDP for synthetic pretraining
-- **Epochs:** 15-25 (early stopping on synthetic validation)
-- **Batch size:** 32
-- **Sequence length:** 64 tokens max
-
-**Training time:**
-- Synthetic pretraining: ~4 hours on 2× RTX 3050
-- Real-data fine-tuning: ~30 minutes
-
-## Ethical Considerations
-
-Generated formulation recipes are **computational hypotheses only**, not clinical recommendations. They should be:
-
-1. **Validated experimentally** before any therapeutic use
-2. **Screened for safety** (toxicity, aggregation, immunogenicity)
-3. **Used for research only**, not direct patient applications
-
-The model is designed to accelerate wet-lab screening, not replace it.
-
-## Cite This Model
+## Cite this model
 
 ```bibtex
 @article{kumar2026bioformlm,
-  title={BioForm-LM: Generative Design of Biologics Formulations via In-Context Learning and Physics-Informed Decoding},
+  title={What Determines a Biologic's Formulation? Two Open Benchmarks, an
+         Audited Mechanistic Simulator, and a Well-Powered
+         Platform-Convergence Result},
   author={Kumar, Bonthada Sravan},
-  journal={Research Square (Preprint)},
-  year={2026},
-  doi={10.21203/rs.[DOI-PENDING]},
-  url={https://www.researchsquare.com}
+  year={2026}
 }
 ```
 
-## Related Resources
+## Related resources
 
-- **GitHub:** https://github.com/Maheshbonthada/bioform-lm
-- **Dataset:** Maheshbonthada/BioFormBench (on Hugging Face)
-- **Paper:** BioForm-LM manuscript (preprint on Research Square)
+- GitHub: https://github.com/Maheshbonthada/bioform-lm
+- Dataset: Sravankumarbonthada/BioFormBench (BioFormBench-Real + BioFormBench-Marketed)
 
-## Authors
+## Author
 
-**Bonthada Sravan Kumar**  
-Independent Researcher, Genes Project  
-Email: sravansaijohn@gmail.com
+Bonthada Sravan Kumar, Independent Researcher — sravansaijohn@gmail.com
 
 ## License
 
-MIT License - See repository for details
+MIT
 
 ---
 
-**Last Updated:** September 7, 2026  
-**Model Status:** ✅ Preprint Released | 📋 Peer Review Pending
+**Last updated:** September 8, 2026
