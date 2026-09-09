@@ -101,7 +101,22 @@ citation** and used placeholder identifiers (`protein_1`–`protein_5`) with
 round, unverified descriptors (50.0 kDa / pI 7.2 / Tm 65.0 C) repeated across
 otherwise-different molecules. Those rows have been **removed**. The 49 rows in
 this release all trace to a PubMed Central ID and were checked against their
-source text. If you have a copy of the 67-row file, discard it and use this one.
+source text.
+
+A second, subtler defect was found afterward in how "one protein" is defined
+for leave-one-protein-out evaluation: a (molecular weight, pI)-string grouping
+silently merged up to **4 different real antibodies** (Trastuzumab, Omalizumab,
+and two others) into a single fake pooled protein wherever their placeholder
+pI values collided at ≈7.2. This release adds a `real_protein_id` column
+(derived from each row's literature source, independent of any descriptor
+value) and corrects pI for 5 of 13 proteins where an independent source could
+be found (Trastuzumab 7.2→9.03; Omalizumab 7.2→5.79; Adalimumab 7.2→8.5; a
+TUR01/adalimumab-biosimilar row 7.3→8.5; a bispecific stated directly in its
+source paper, 6.9→8.52). One protein (mAb2) has no independently obtainable
+value and keeps its placeholder, flagged via `pi_corrected=False`. Always group
+by `real_protein_id`, not by (MW, pI), for any protein-identity-sensitive
+analysis. If you have a copy of the 67-row file or a version without
+`real_protein_id`, discard it and use this one.
 
 ## 1. BioFormBench-Real (49 rows, 13 proteins)
 

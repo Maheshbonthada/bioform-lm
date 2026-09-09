@@ -122,6 +122,9 @@ def protein_specificity(model, prefix_builder, true_recipes, other_keys, device)
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", default="experiments/checkpoints_conditional/best.pt")
+    ap.add_argument("--data", default=None,
+                    help="BioFormBench CSV path (default: BioFormBenchV2's own default)")
+    ap.add_argument("--min-formulations", type=int, default=4)
     ap.add_argument("--shots", type=int, default=2)
     ap.add_argument("--candidates", type=int, default=50)
     ap.add_argument("--temperature", type=float, default=1.0)
@@ -140,7 +143,7 @@ def main():
     model.load_state_dict(ck["model_state_dict"])
     model.eval()
 
-    bench = BioFormBenchV2()
+    bench = BioFormBenchV2(csv_path=a.data, min_formulations=a.min_formulations)
     bench.load()
     print("benchmark: " + json.dumps(bench.summary()))
     print("checkpoint: {} (epoch {}, val {:.4f})\n".format(

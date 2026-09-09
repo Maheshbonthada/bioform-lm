@@ -78,8 +78,21 @@ $p = 0.137$ even at $n=27$) and fails leave-one-protein-out prediction (MAE $0.4
 vs. a $0.393$ no-information baseline). Instead, formulation choice is dominated by
 a small, conventional design space (platform effect): pH clusters at
 mean $5.90 \pm 0.58$, a single buffer covers $52\%$ of cases, and no available
-covariate beats a constant platform baseline (all sign-flip $p > 0.8$). Separately,
-in a controlled architecture experiment, we show that in-context conditioning on
+covariate beats a constant platform baseline (all sign-flip $p > 0.8$). A separate
+audit of the model-evaluation pipeline on BioFormBench-Real finds the same class of
+defect one level deeper: a (molecular-weight, pI)-string grouping used to define
+``one protein'' for leave-one-protein-out testing silently merged up to four
+different real antibodies into a single pooled identity wherever their placeholder
+descriptors collided. Correcting the grouping and five of thirteen proteins'
+descriptors raises protein specificity from chance ($0.509$) to $0.74$--$0.78$
+($p = 0.016$--$0.023$, unanimous on 7/7 proteins with a fully resolved descriptor)
+for the properly-conditioned model, against a same-architecture untrained control
+that remains at chance ($p \geq 0.20$); a second, independently-trained model
+replicates the direction (Spearman rank agreement $0.73$, $p = 0.039$) but only
+marginally the magnitude ($p = 0.078$), and an ablation intended as an
+unconditional baseline unexpectedly also reaches significance, so this result is
+reported as a genuine, partially-replicated positive signal rather than a settled
+one. Separately, in a controlled architecture experiment, we show that in-context conditioning on
 per-protein examples only works if the generator is pretrained on in-context-
 structured sequences: supplying real few-shot context at inference raises the
 likelihood the model assigns the true held-out formulation (relative to random
@@ -439,22 +452,96 @@ format.
   \end{tabular}
 \end{table}
 
-\subsection{Generation quality is consistent with, not independent of, these
-findings}
+\subsection{Generation quality, and a second identity-merging bug}
+\label{sec:identityfix}
 
 Under the original leave-one-protein-out generative evaluation (9 eligible folds
 on BioFormBench-Real, $\S$\ref{sec:bfb-real}), likelihood percentile is $0.797$
 (bootstrap $95\%$ CI $[0.729, 0.865]$) but an unconditional (protein-blind)
 baseline scores comparably ($0.872$), so this metric is winnable from the
 marginal recipe distribution alone. Protein-specificity --- the model's score
-when the true protein descriptor is swapped for a mismatched one --- is
-$0.509$ ($95\%$ CI $[0.358, 0.669]$), statistically indistinguishable from
-chance. Exact-match recall@10 is $0.011$. Given Section~\ref{sec:platform}'s
-finding that protein identity carries no detectable, measurable relationship to
-real formulation choice at $n=80$, a model cannot be expected to condition on
-that relationship at $n=9$; we regard the weak generation numbers as the
-predictable consequence of the platform-convergence result, not an independent
-failure requiring a separate explanation.
+when the true protein descriptor is swapped for a mismatched one --- was
+measured at $0.509$ ($95\%$ CI $[0.358, 0.669]$), statistically indistinguishable
+from chance, and was the headline evidence that the pipeline had learned nothing
+protein-specific.
+
+That measurement turned out to rest on the same class of defect audited out of
+BioFormBench-Marketed in Section~\ref{sec:selection}, one level deeper in the
+pipeline. The leave-one-protein-out loader defines ``one protein'' by
+concatenating rounded molecular weight and pI into a string key
+(\texttt{evaluation/benchmark\_v2.py}) rather than by the molecule's actual
+identity. Because several BioFormBench-Real proteins carried the same
+placeholder-pI defect documented in Section~\ref{sec:bfb-marketed} --- Trastuzumab,
+Omalizumab, mAb2, and a fourth developability-panel antibody were all recorded at
+pI $\approx 7.2$ --- the loader silently pooled all four into a single fake
+``protein'' with ten formulations, so at least one leave-one-protein-out fold was,
+in effect, training on one real antibody's data and testing as though predicting
+another's.
+
+We replace the string-matched key with an explicit identity derived from each
+row's literature source (independent of any descriptor value) and correct pI for
+the five real proteins identifiable by name using the same sourcing standard as
+Section~\ref{sec:bfb-marketed} (Trastuzumab $7.2\to9.03$; Omalizumab
+$7.2\to5.79$; Adalimumab $7.2\to8.5$; a TUR01/adalimumab-biosimilar row
+$7.3\to8.5$, since biosimilarity requires an identical sequence to the reference
+product; a bispecific stated directly in its source paper, $6.9\to8.52$). Two
+further proteins' own literature or sequence-derived pI (PGT121: $7.06$; rhIL-1ra:
+$5.46$) turned out close to their existing placeholder and were left unchanged;
+one protein (mAb2) has no independently obtainable value and keeps its original
+placeholder, flagged as such.
+
+Re-running the identical evaluation protocol on the corrected identities and
+descriptors, with the minimum-formulations threshold relaxed from 4 to 3 (needed
+to admit two real proteins the original merge had made appear too small) gives 8
+resolvable proteins. Figure~\ref{fig:identityfix} reports protein specificity
+under four conditions: the properly-conditioned model, a second, independently
+pretrained model (the ICL-structured one from Section~\ref{sec:icl}), an
+ablation intended as an unconditional baseline, and an architecturally identical
+but entirely untrained (random-weight) control. The untrained control remains at
+chance under both groupings ($p \geq 0.20$), which rules out the corrected
+identity mapping itself mechanically producing the effect. The properly-conditioned
+model rises to $0.737$ ($p=0.023$, $n=8$) and $0.781$ ($p=0.016$, unanimous 7/7)
+once the one still-unresolved protein is excluded. The second model replicates
+the ranking of which proteins show more or less specificity (Spearman
+$\rho=0.73$, $p=0.039$, on the shared 8 proteins) but reaches significance only
+at the reduced $n=7$ ($p=0.078$ at $n=8$). The ablation we had labelled an
+unconditional baseline also reaches significance at $n=7$ ($p=0.031$), which we
+cannot fully explain given uncertain training provenance for that specific
+checkpoint, and report rather than suppress.
+
+% --- FIGURE 4 (full width) --------------------------------------------------
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig4_identity_fix.pdf}
+  \caption{Protein specificity before and after fixing the identity-merging bug
+  in the leave-one-protein-out loader (Section~\ref{sec:identityfix}), across
+  four conditions and two groupings of the 8 resolvable proteins.
+  \textbf{(a)} All 8 proteins. \textbf{(b)} Excluding mAb2, the one protein with
+  no independently obtainable descriptor correction. The untrained (random-weight)
+  control stays at chance in both panels; the properly-conditioned model is the
+  only condition significant in both.}
+  \label{fig:identityfix}
+\end{figure*}
+
+We read this as genuine, non-trivial progress that stops short of a clean,
+fully-settled positive result. What is solid: the identity-merging bug is real
+and mechanistically demonstrated, not inferred; fixing it, together with
+correcting five of thirteen proteins' descriptors, moves the primary
+model's protein specificity from a chance-level point estimate to a
+statistically significant, largely unanimous one; and an untrained control
+confirms this is not an artefact of the corrected grouping alone. What remains
+open: the effect is significant for one of two independently trained models and
+only marginally so for the other, and an ablation meant to isolate the
+conditioning mechanism itself shows an effect we did not predict and cannot yet
+fully attribute. We report the finding at this level of honesty rather than
+either discarding it as noise or overstating it as resolved, and flag the
+"unconditional" ablation's provenance as the specific next thing to verify
+before treating this as settled (Section~\ref{sec:limitations}).
+
+Exact-match recall@10 remains low ($0.011$--$0.025$ across configurations),
+consistent with a benchmark whose held-out formulation space is far larger than
+any per-fold candidate budget; specificity and likelihood percentile, which do
+not require an exact token match, are the metrics this result rests on.
 
 \subsection{In-context training is necessary, independent of the domain result}
 \label{sec:icl}
@@ -512,23 +599,34 @@ platform baseline, and should treat manufacturing/regulatory covariates (route,
 company, era, indication) as candidate first-class conditioning variables rather
 than assuming molecular physics alone explains marketed choice.
 
-\subsection{Why protein-conditional design may still be right, and what would
-show it}
+\subsection{Why protein-conditional design may still be right, and what the
+identity-fix result adds}
 
 Absence of a detectable signal in \emph{marketed} formulations does not rule out
 that stability-optimal formulations are protein-conditional; marketed choices are
 also shaped by manufacturability, prior platform investment, and regulatory
 precedent, which is exactly what Section~\ref{sec:platform}'s variance
 decomposition suggests (formulations are far more reproducible within a molecule
-than explicable across molecules). The decisive test needs \emph{measured
-stability outcomes} across many proteins holding formulation fixed, or vice
-versa --- which is precisely what BioFormBench-Real provides at $n=13$ proteins
-but not yet at the scale needed for a well-powered version of the test in
-Section~\ref{sec:selection}. Expanding that benchmark, not the marketed-label
-benchmark, is the highest-value next step for settling the question this paper
-could not.
+than explicable across molecules). Section~\ref{sec:identityfix}'s result is a
+first, partial answer in the direction this predicts: on BioFormBench-Real,
+where the target is \emph{measured stability}, not marketed choice, correcting a
+second identity-merging bug and five proteins' descriptors raises the properly-
+conditioned model's protein specificity from chance to a significant, largely
+unanimous effect, ruled out as a pure artefact of the corrected grouping by an
+untrained control that stays at chance. We do not treat this as a settled
+positive result -- replication across a second model is only partial, and an
+ablation meant to serve as a clean negative control unexpectedly also reaches
+significance -- but it is genuine evidence that the earlier chance-level verdict
+on BioFormBench-Real was itself partly an artefact of unresolved protein
+identity, not proof that the underlying task is unlearnable. The decisive
+follow-up is the same one this paper already calls for: scaling measured-
+stability data past the $n=13$ proteins available here, now with the identity
+and descriptor bugs fixed, so the test in Section~\ref{sec:identityfix} can be
+run at a sample size large enough to resolve the two models' disagreement and
+the unexplained ablation result.
 
 \subsection{Limitations}
+\label{sec:limitations}
 
 BioFormBench-Marketed encodes \emph{what was chosen}, not \emph{what performs
 best}; the two can diverge for exactly the manufacturing/regulatory reasons
@@ -537,11 +635,19 @@ stratified by confidence and the low-confidence stratum is retained transparentl
 rather than silently discarded. Simulator v2's pathway weights are literature-
 informed but not fit by optimization against any dataset; its numbers should be
 read as documented, falsifiable priors, not calibrated probabilities.
-BioFormBench-Real, after the provenance purge, supports only 9 leave-one-protein-
-out folds, too few for a definitive protein-conditionality verdict on stability
-outcomes specifically (Section~\ref{sec:selection}'s $n=80$ test concerns
-formulation \emph{choice}, a related but distinct question). No wet-lab
-validation was performed at any stage.
+BioFormBench-Real, after the provenance purge and the identity fix
+(Section~\ref{sec:identityfix}), supports only 8 leave-one-protein-out folds
+(7 with a fully resolved descriptor), too few to be a definitive verdict on
+stability-outcome protein-conditionality on its own; we report the resulting
+effect with that caveat throughout rather than as settled. The specific
+ablation we had labelled an unconditional baseline in
+Section~\ref{sec:identityfix} has training provenance we could not fully
+re-verify in this pass and reached significance unexpectedly; we flag it as
+the concrete next thing to re-derive from scratch before this result is used
+elsewhere. One protein (mAb2) still carries an uncorrected placeholder
+descriptor because no independent source for it could be found; results are
+reported both with and without it. No wet-lab validation was performed at any
+stage.
 
 \subsection{Practical impact}
 
@@ -560,23 +666,32 @@ plausibly affecting other small pharma-ML studies in this space.
 % ===========================================================================
 
 We set out to audit and strengthen a generative biologics-formulation pipeline,
-and the audit changed the paper's central claim. A mechanistic simulator commonly
-used to substitute for scarce real data had two structurally dead recipe slots
-and corner-collapsing optima in three of four continuous variables; we fixed
-this. A promising protein-conditional correlation in real marketed-formulation
-data did not survive scaling from $n=27$ to $n=80$ or leave-one-protein-out
-validation; we report why, in enough statistical detail that the failure mode is
-reusable as a checklist for other studies. What the data does support, at
-adequate power, is that marketed antibody formulations converge on a narrow,
-conventional design space that no measured covariate explains better than a
-constant baseline --- and, independent of this domain, that in-context
-conditional generation requires in-context-structured pretraining data,
-demonstrated with a unanimous, exactly-tested effect in both directions. We
-release both benchmarks, the corrected simulator, and the full statistical
-pipeline so the open question this paper leaves --- whether \emph{stability-
-optimal}, as opposed to \emph{marketed}, formulation is protein-conditional ---
-can be settled by whoever next scales the real-stability-outcome benchmark past
-the $n=13$ proteins available here.
+and the audit changed the paper's central claim twice over. A mechanistic
+simulator commonly used to substitute for scarce real data had two structurally
+dead recipe slots and corner-collapsing optima in three of four continuous
+variables; we fixed this. A promising protein-conditional correlation in real
+marketed-formulation data did not survive scaling from $n=27$ to $n=80$ or
+leave-one-protein-out validation; we report why, in enough statistical detail
+that the failure mode is reusable as a checklist for other studies. What the
+data does support, at adequate power, is that marketed antibody formulations
+converge on a narrow, conventional design space that no measured covariate
+explains better than a constant baseline. But a second identity-merging bug,
+this time in the leave-one-protein-out evaluation loader itself, had been
+silently pooling up to four different real antibodies into one fake protein;
+fixing it, and correcting five of thirteen proteins' descriptors, raised
+protein specificity on \emph{measured-stability} data from a flatly chance-level
+verdict to a significant, largely unanimous positive effect for the properly-
+conditioned model, confirmed non-trivial by an untrained control and partially,
+not fully, replicated by a second independently trained model. We report that
+result at the honesty level it has earned -- real and mechanistically explained
+progress, not proof -- alongside an unrelated but cleanly settled architecture
+finding: in-context conditional generation requires in-context-structured
+pretraining data, demonstrated with a unanimous, exactly-tested effect in both
+directions. We release both benchmarks, the corrected simulator, and the full
+statistical pipeline, including the identity fix, so the question this paper
+narrows but does not close -- whether \emph{stability-optimal} formulation is
+protein-conditional -- can be settled by whoever next scales real measured-
+stability data past the $n=13$ proteins available here.
 
 \subsection*{Ethics and intended use}
 

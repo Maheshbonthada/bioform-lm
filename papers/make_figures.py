@@ -231,8 +231,41 @@ def fig3_calibration():
     save(fig, "fig3_calibration")
 
 
+# ===========================================================================
+# Figure 4: the identity-merging bug fix and its (partially verified) effect
+# ===========================================================================
+def fig4_identity_fix():
+    r = load("specificity_fix_consolidated.json")
+    order = ["random_untrained_control", "icl", "unconditional_ablation", "conditional"]
+    labels = ["Untrained\n(random weights)", "ICL-trained", "\"Unconditional\"\nablation*",
+              "Conditional\n(primary)"]
+    colors = [GREY, ORANGE, "#9c7a3c", BLUE]
+
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 2.7))
+
+    for ax, tag, title in zip(axes, ["n=8_all", "n=7_excl_mAb2"],
+                              ["(a) All 8 identity-resolved proteins",
+                               "(b) Excluding mAb2 (still-placeholder pI)"]):
+        means = [r[k][tag]["mean"] for k in order]
+        ps = [r[k][tag]["exact_p"] for k in order]
+        bars = ax.bar(labels, means, color=colors, width=0.6)
+        ax.axhline(0.5, color="black", lw=0.8, ls="--")
+        ax.set_ylim(0.4, 0.95)
+        ax.set_ylabel("Protein specificity")
+        ax.set_title(title, loc="left", fontsize=8)
+        for b, m, p in zip(bars, means, ps):
+            star = "**" if p < 0.01 else "*" if p < 0.05 else "n.s."
+            ax.text(b.get_x() + b.get_width()/2, m + 0.015, f"{m:.3f}\np={p:.3f} {star}",
+                    ha="center", fontsize=6.4)
+        ax.tick_params(axis="x", labelsize=6.6)
+
+    fig.tight_layout()
+    save(fig, "fig4_identity_fix")
+
+
 if __name__ == "__main__":
     fig1_architecture()
     fig2_recall()
     fig3_calibration()
+    fig4_identity_fix()
     print(f"wrote figures to {FIG_DIR}")

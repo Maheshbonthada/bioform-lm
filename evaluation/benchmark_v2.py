@@ -27,6 +27,17 @@ import pandas as pd
 
 DEFAULT_CSV = Path(__file__).resolve().parent.parent / "data" / "bioformbench_v2.csv"
 
+# bioformbench_v4.csv (scripts/correct_real_descriptors.py) carries a
+# `real_protein_id` column derived from each row's protein_id prefix -- i.e.
+# from which real molecule it names -- rather than from (MW, pI) string
+# matching. The string-match key is fragile by construction: rounding two
+# floats and concatenating them collides whenever unrelated proteins happen to
+# share a bucket, which is exactly what happened before this fix (Trastuzumab,
+# Omalizumab, mAb2 and a fourth developability-panel antibody were all merged
+# into one fake pooled "protein" via a shared placeholder pI of 7.2). Prefer
+# `real_protein_id` whenever the loaded CSV has it.
+REAL_IDENTITY_COL = "real_protein_id"
+
 
 class BioFormBenchV2:
     def __init__(self, csv_path: Optional[Path] = None, min_formulations: int = 4):
@@ -37,11 +48,16 @@ class BioFormBenchV2:
     def load(self) -> pd.DataFrame:
         df = pd.read_csv(self.csv_path)
 
-        # (1) real protein identity
-        df["protein_key"] = (
-            df["protein_mw_kda"].round(2).astype(str) + "_" +
-            df["protein_pi"].round(2).astype(str)
-        )
+        # (1) real protein identity: prefer the explicit, descriptor-independent
+        # identity column when present; fall back to (MW, pI) string matching
+        # only for older files that don't carry it.
+        if REAL_IDENTITY_COL in df.columns:
+            df["protein_key"] = df[REAL_IDENTITY_COL]
+        else:
+            df["protein_key"] = (
+                df["protein_mw_kda"].round(2).astype(str) + "_" +
+                df["protein_pi"].round(2).astype(str)
+            )
 
         # (2) neutralise the leaking baseline-Tm column
         df["tm_baseline_clean"] = df.groupby("protein_key")["protein_tm_baseline_c"] \

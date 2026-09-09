@@ -54,28 +54,41 @@ Three-stage pipeline:
 3. **Stability-classification head.** Scores a full (protein, recipe) sequence
    for a discretized stability bin; used for best-of-N reranking.
 
-## Real, verified results (BioFormBench-Real, 9 LOPO folds)
+## Real, verified results (BioFormBench-Real)
 
-| Metric | Value | 95% CI | Chance |
-|---|---|---|---|
-| Likelihood percentile | 0.797 | [0.729, 0.865] | 0.5 |
-| ...unconditional baseline | 0.872 | - | 0.5 |
-| Protein specificity | 0.509 | [0.358, 0.669] | 0.5 |
-| Recall@10 (exact match) | 0.011 | [0.000, 0.033] | - |
-| Calibration (Spearman rho) | +0.280 | [-0.405, +0.964] | 0 |
+The protein-specificity number below was revised after this card's first
+release. The original evaluation grouped "one protein" by a (molecular weight,
+pI)-string match, which silently merged up to 4 different real antibodies
+(Trastuzumab, Omalizumab, and two others) into one fake pooled protein wherever
+their placeholder pI values collided — so the original 0.509 was measured on a
+benchmark that could not, by construction, cleanly separate several of its own
+proteins. Fixing the grouping and correcting pI for 5 of 13 proteins gives:
 
-**Read this table correctly.** Likelihood percentile looks good in isolation
-(0.797) until compared against a protein-blind unconditional model, which
-scores *higher* (0.872) — meaning that metric rewards learning the marginal
-recipe distribution, not protein-conditional structure. Protein specificity
-(swap the true protein descriptor for a foreign one; does the model still
-prefer the real recipe?) is the metric that actually isolates conditional
-knowledge, and it sits at 0.509, statistically indistinguishable from chance
-(95% CI spans 0.5). Given a companion analysis on 80 real approved antibodies
-found no detectable relationship between protein sequence and marketed
-formulation choice either (see paper Section 3.3), this is not a surprising
-model failure so much as the predictable consequence of conditioning on a
-relationship that may not be there to learn at the sample sizes available.
+| Metric | Value | 95% CI / p | Chance | Folds |
+|---|---|---|---|---|
+| Likelihood percentile | 0.797 | CI [0.729, 0.865] | 0.5 | 9 (original grouping) |
+| ...unconditional baseline | 0.872 | - | 0.5 | 9 |
+| Protein specificity (original, buggy grouping) | 0.509 | CI [0.358, 0.669] | 0.5 | 9 |
+| **Protein specificity (identity-fixed)** | **0.737–0.781** | **p = 0.016–0.023** | 0.5 | 8 (7 excl. one unresolved protein) |
+| ...same-architecture untrained control | 0.565–0.625 | p = 0.20–0.50 (n.s.) | 0.5 | 8 |
+| Recall@10 (exact match) | 0.011–0.025 | CI incl. 0 | - | 8–9 |
+
+**Read this table correctly, in both directions.** The likelihood-percentile
+caveat still holds: it is winnable from the marginal recipe distribution alone
+(the unconditional baseline scores higher), so it does not by itself evidence
+conditional knowledge. The corrected protein-specificity result is real
+progress — significant, largely unanimous (7/7 once the one still-unresolved
+protein, `mAb2`, is excluded), and not explained by an untrained
+same-architecture control, which stays at chance. But it is **not fully
+settled**: a second, independently-trained checkpoint
+(`checkpoints_icl`) replicates the *direction* (Spearman rank agreement 0.73,
+p=0.039 across the two checkpoints' per-protein values) but reaches
+significance only marginally on its own (p=0.078), and an ablation intended as
+an unconditional baseline unexpectedly also reached significance in this
+setup, for reasons we could not fully re-verify (see the paper's Limitations).
+Treat this as genuine, mechanistically-explained evidence that the earlier
+chance-level verdict was partly a benchmark bug, not as proof the model has
+learned formulation physics.
 
 ## A finding that IS real and reproducible: ICL requires ICL-structured training
 
