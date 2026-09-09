@@ -236,10 +236,10 @@ def fig3_calibration():
 # ===========================================================================
 def fig4_identity_fix():
     r = load("specificity_fix_consolidated.json")
-    order = ["random_untrained_control", "icl", "unconditional_ablation", "conditional"]
-    labels = ["Untrained\n(random weights)", "ICL-trained", "\"Unconditional\"\nablation*",
-              "Conditional\n(primary)"]
-    colors = [GREY, ORANGE, "#9c7a3c", BLUE]
+    order = ["random_untrained_control", "clean_unconditional_control", "icl", "conditional"]
+    labels = ["Untrained\n(random weights)", "Unconditional\n(decorrelated,\nverified)",
+              "ICL-trained", "Conditional\n(primary)"]
+    colors = [GREY, "#6b8f71", ORANGE, BLUE]
 
     fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 2.7))
 

@@ -56,3 +56,6 @@ RESEARCH_SQUARE_PREPRINT/Manuscript/*.pdf
 
 # Checkpoint variants not matching the plain "checkpoints" name (large; hosted on HF)
 experiments/checkpoints_*/
+
+# Word lock files
+~$*.doc*

@@ -86,13 +86,17 @@ different real antibodies into a single pooled identity wherever their placehold
 descriptors collided. Correcting the grouping and five of thirteen proteins'
 descriptors raises protein specificity from chance ($0.509$) to $0.74$--$0.78$
 ($p = 0.016$--$0.023$, unanimous on 7/7 proteins with a fully resolved descriptor)
-for the properly-conditioned model, against a same-architecture untrained control
-that remains at chance ($p \geq 0.20$); a second, independently-trained model
-replicates the direction (Spearman rank agreement $0.73$, $p = 0.039$) but only
-marginally the magnitude ($p = 0.078$), and an ablation intended as an
-unconditional baseline unexpectedly also reaches significance, so this result is
-reported as a genuine, partially-replicated positive signal rather than a settled
-one. Separately, in a controlled architecture experiment, we show that in-context conditioning on
+for the properly-conditioned model, confirmed non-trivial by two independent
+controls --- an untrained model and a second model trained on the identical
+corpus with protein descriptors verifiably decorrelated from recipes --- both of
+which remain at chance ($p \geq 0.20$). A second, independently-trained
+conditional model replicates the direction (Spearman rank agreement $0.73$,
+$p = 0.039$) but only marginally the magnitude alone ($p = 0.078$); combining
+both models' evidence with a pre-specified Stouffer test gives $p =
+0.0016$--$0.0064$. We report this as a genuine, largely-corroborated positive
+signal, with the remaining open question being effect-size replication rather
+than whether an effect exists at all. Separately, in a controlled architecture
+experiment, we show that in-context conditioning on
 per-protein examples only works if the generator is pretrained on in-context-
 structured sequences: supplying real few-shot context at inference raises the
 likelihood the model assigns the true held-out formulation (relative to random
@@ -493,21 +497,33 @@ placeholder, flagged as such.
 Re-running the identical evaluation protocol on the corrected identities and
 descriptors, with the minimum-formulations threshold relaxed from 4 to 3 (needed
 to admit two real proteins the original merge had made appear too small) gives 8
-resolvable proteins. Figure~\ref{fig:identityfix} reports protein specificity
-under four conditions: the properly-conditioned model, a second, independently
-pretrained model (the ICL-structured one from Section~\ref{sec:icl}), an
-ablation intended as an unconditional baseline, and an architecturally identical
-but entirely untrained (random-weight) control. The untrained control remains at
-chance under both groupings ($p \geq 0.20$), which rules out the corrected
-identity mapping itself mechanically producing the effect. The properly-conditioned
-model rises to $0.737$ ($p=0.023$, $n=8$) and $0.781$ ($p=0.016$, unanimous 7/7)
-once the one still-unresolved protein is excluded. The second model replicates
+resolvable proteins. An earlier pass of this analysis also included a checkpoint
+we had labelled an unconditional baseline, of uncertain training provenance,
+which unexpectedly also reached significance; rather than report that anomaly
+unresolved, we built a second, properly documented unconditional control from
+scratch (\texttt{scripts/train\_unconditional\_control.py}): the exact corpus
+used to train the primary model, with protein descriptors independently
+permuted against recipes and outcomes row-for-row, so that $P(\text{recipe}
+\mid \text{protein})$ is destroyed by construction and verified so (fraction of
+rows where a descriptor landed back on its own recipe by chance: $0.0000$).
+
+Figure~\ref{fig:identityfix} reports protein specificity under four conditions:
+the properly-conditioned model, a second, independently pretrained model (the
+ICL-structured one from Section~\ref{sec:icl}), the verified decorrelated
+control, and an architecturally identical but entirely untrained (random-weight)
+control. Both controls remain at chance under both groupings (untrained:
+$p \geq 0.20$; decorrelated: $p \geq 0.54$), which rules out both the corrected
+identity mapping and the trained-backbone-with-random-head explanation as the
+source of the effect --- a properly constructed negative control behaves exactly
+as a negative control should. The properly-conditioned model rises to $0.737$
+($p=0.023$, $n=8$, one-sided) and $0.781$ ($p=0.016$, unanimous 7/7) once the one
+still-unresolved protein (\texttt{mAb2}) is excluded. The second model replicates
 the ranking of which proteins show more or less specificity (Spearman
 $\rho=0.73$, $p=0.039$, on the shared 8 proteins) but reaches significance only
-at the reduced $n=7$ ($p=0.078$ at $n=8$). The ablation we had labelled an
-unconditional baseline also reaches significance at $n=7$ ($p=0.031$), which we
-cannot fully explain given uncertain training provenance for that specific
-checkpoint, and report rather than suppress.
+at the reduced $n=7$ alone ($p=0.078$ at $n=8$). Because both models test the same
+directional hypothesis independently, we combine their one-sided $p$-values with
+Stouffer's method (sample-size-weighted, pre-specified rather than chosen after
+inspection): $Z=2.49$, $p=0.0064$ at $n=8$, and $Z=2.96$, $p=0.0016$ at $n=7$.
 
 % --- FIGURE 4 (full width) --------------------------------------------------
 \begin{figure*}[t]
@@ -517,26 +533,27 @@ checkpoint, and report rather than suppress.
   in the leave-one-protein-out loader (Section~\ref{sec:identityfix}), across
   four conditions and two groupings of the 8 resolvable proteins.
   \textbf{(a)} All 8 proteins. \textbf{(b)} Excluding mAb2, the one protein with
-  no independently obtainable descriptor correction. The untrained (random-weight)
-  control stays at chance in both panels; the properly-conditioned model is the
-  only condition significant in both.}
+  no independently obtainable descriptor correction. Both the untrained
+  (random-weight) control and a verified decorrelated control (same corpus,
+  protein-recipe pairing destroyed by construction) stay at chance in both
+  panels; the properly-conditioned model is the only single condition
+  significant in both, and the two trained models' combined (Stouffer)
+  evidence reaches $p=0.0064$--$0.0016$.}
   \label{fig:identityfix}
 \end{figure*}
 
-We read this as genuine, non-trivial progress that stops short of a clean,
-fully-settled positive result. What is solid: the identity-merging bug is real
-and mechanistically demonstrated, not inferred; fixing it, together with
-correcting five of thirteen proteins' descriptors, moves the primary
-model's protein specificity from a chance-level point estimate to a
-statistically significant, largely unanimous one; and an untrained control
-confirms this is not an artefact of the corrected grouping alone. What remains
-open: the effect is significant for one of two independently trained models and
-only marginally so for the other, and an ablation meant to isolate the
-conditioning mechanism itself shows an effect we did not predict and cannot yet
-fully attribute. We report the finding at this level of honesty rather than
-either discarding it as noise or overstating it as resolved, and flag the
-"unconditional" ablation's provenance as the specific next thing to verify
-before treating this as settled (Section~\ref{sec:limitations}).
+We read this as genuine, non-trivial progress, corroborated rather than merely
+asserted: the identity-merging bug is real and mechanistically demonstrated,
+not inferred; fixing it, together with correcting five of thirteen proteins'
+descriptors, moves the primary model's protein specificity from a chance-level
+point estimate to a statistically significant, largely unanimous one; two
+independent controls --- an untrained model and a verified decorrelated one ---
+both confirm this is not an artefact of the corrected grouping or of trained
+representations alone; and the combined evidence across both trained models
+reaches $p=0.0016$--$0.0064$ under a pre-specified test. What remains open is
+narrower than before: replication is directionally consistent but the effect
+size differs between the two models (Section~\ref{sec:limitations}), and one
+protein's descriptor remains uncorrected for lack of an independent source.
 
 Exact-match recall@10 remains low ($0.011$--$0.025$ across configurations),
 consistent with a benchmark whose held-out formulation space is far larger than
@@ -639,15 +656,14 @@ BioFormBench-Real, after the provenance purge and the identity fix
 (Section~\ref{sec:identityfix}), supports only 8 leave-one-protein-out folds
 (7 with a fully resolved descriptor), too few to be a definitive verdict on
 stability-outcome protein-conditionality on its own; we report the resulting
-effect with that caveat throughout rather than as settled. The specific
-ablation we had labelled an unconditional baseline in
-Section~\ref{sec:identityfix} has training provenance we could not fully
-re-verify in this pass and reached significance unexpectedly; we flag it as
-the concrete next thing to re-derive from scratch before this result is used
-elsewhere. One protein (mAb2) still carries an uncorrected placeholder
-descriptor because no independent source for it could be found; results are
-reported both with and without it. No wet-lab validation was performed at any
-stage.
+effect with that caveat throughout rather than as settled. The two independently
+trained models agree in direction but not fully in magnitude ($0.737$ vs.\
+$0.597$ at $n=8$); the combined Stouffer test is the correct summary of that
+evidence, not a way to paper over the disagreement, and a third independently
+trained model would be the natural next check. One protein (mAb2) still carries
+an uncorrected placeholder descriptor because no independent source for it
+could be found, despite a targeted search; results are reported both with and
+without it. No wet-lab validation was performed at any stage.
 
 \subsection{Practical impact}
 

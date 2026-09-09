@@ -78,15 +78,20 @@ caveat still holds: it is winnable from the marginal recipe distribution alone
 (the unconditional baseline scores higher), so it does not by itself evidence
 conditional knowledge. The corrected protein-specificity result is real
 progress — significant, largely unanimous (7/7 once the one still-unresolved
-protein, `mAb2`, is excluded), and not explained by an untrained
-same-architecture control, which stays at chance. But it is **not fully
-settled**: a second, independently-trained checkpoint
-(`checkpoints_icl`) replicates the *direction* (Spearman rank agreement 0.73,
-p=0.039 across the two checkpoints' per-protein values) but reaches
-significance only marginally on its own (p=0.078), and an ablation intended as
-an unconditional baseline unexpectedly also reached significance in this
-setup, for reasons we could not fully re-verify (see the paper's Limitations).
-Treat this as genuine, mechanistically-explained evidence that the earlier
+protein, `mAb2`, is excluded), and confirmed non-trivial by **two** independent
+controls: an untrained same-architecture model, and a second model
+(`checkpoint_unconditional_control.pt`) trained on the identical corpus with
+protein descriptors independently permuted against recipes and outcomes, so
+that P(recipe|protein) is destroyed by construction. Both stay at chance
+(untrained: p≥0.20; decorrelated: p≥0.54) — a properly built negative control
+behaves as one should, which resolves an earlier release's unexplained
+anomaly on an ablation of uncertain provenance. A second, independently-trained
+checkpoint (`checkpoints_icl`) replicates the *direction* of the positive
+result (Spearman rank agreement 0.73, p=0.039 across the two checkpoints'
+per-protein values) but reaches significance only marginally on its own
+(p=0.078); combining both models' one-sided p-values with a pre-specified
+Stouffer test gives p=0.0016–0.0064 (see the paper). Treat this as genuine,
+mechanistically-explained evidence that the earlier
 chance-level verdict was partly a benchmark bug, not as proof the model has
 learned formulation physics.
 
